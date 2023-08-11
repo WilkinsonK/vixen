@@ -76,17 +76,6 @@ typedef struct VxnTkDef {
     char*       value;
 } VxnTkDef;
 
-// Get string representation of a definition.
-char* VxnTkDef_Str(VxnTkDef* def) {
-    char* buf = (char*)calloc(128, sizeof(char));
-    sprintf(
-        buf,
-        "[definition][%s: \"%s\"]",
-        VxnTkKind_Str(def->kind),
-        def->value);
-    return buf;
-}
-
 // Creates a new token defintion.
 VxnTkDef* VxnTkDef_New(VxnTkKind kind, const char* name, const char* value) {
 
@@ -110,6 +99,17 @@ void VxnTkDef_Del(VxnTkDef* def) {
     free(def->value);
     // Remove definition itself.
     free(def);
+}
+
+// Get string representation of a definition.
+char* VxnTkDef_Str(VxnTkDef* def) {
+    char* buf = (char*)calloc(128, sizeof(char));
+    sprintf(
+        buf,
+        "[definition][%s: \"%s\"]",
+        VxnTkKind_Str(def->kind),
+        def->value);
+    return buf;
 }
 
 // Token definition register.
