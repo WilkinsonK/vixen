@@ -1,4 +1,5 @@
 #ifndef VIXEN_TOKENS
+#include <math.h>
 #include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,6 +30,7 @@
 // Allocates memory on the heap, as a dynamic
 // char array, large enough to hold `STR`.
 #define VXN_TK_STR_MALLOC(STR) (char*)malloc(strlen(STR))
+
 // Vixen token.
 typedef struct VxnTk VxnTk;
 // A single token definition.
@@ -54,18 +56,20 @@ static void VxnTokenDefs_Add(VxnTkKind, const char*, const char*);
 // register.
 static void VxnTokenDefs_Pop();
 // Create an empty list node.
-static VxnTkList* VxnTkList_New();
+VxnTkList* VxnTkList_New();
 // Initialize a new token list.
-static VxnTkList* VxnTkList_Init(VxnTkDef*, const char*);
+void VxnTkList_Init(VxnTkList*, const char*, VxnTkList*);
 // Destroy the given list and all of it's
 //relatives.
-static void VxnTkList_Del(VxnTkList*);
+void VxnTkList_Del(VxnTkList*);
+// Find the list node at the given index.
+VxnTkList* VxnTkList_Find(VxnTkList*, int);
 // Insert a token at the given index of the list.
-static void VxnTkList_Insert(VxnTkList*, VxnTkList*, int);
+void VxnTkList_Insert(VxnTkList*, VxnTkList*, int);
 // Insert a token at the end of the list.
-static void VxnTkList_Append(VxnTkList*, VxnTkList*);
+void VxnTkList_Append(VxnTkList*, VxnTkList*);
 // Remove the child node from the linked list.
-static void VxnTkList_Remove(VxnTkList*, VxnTkList*);
+void VxnTkList_Remove(VxnTkList*, VxnTkList*);
 
 typedef enum VxnTkKind {
     Tk_ERROR,
@@ -181,7 +185,6 @@ static void VxnTokenDefs_Init() {
     VxnTkDefs.curr_size = 0;
     VxnTkDefs.prev_size = 1;
     VxnTkDefs.defs = VXN_TK_PTR_CALLOC(VxnTkDef*, VxnTkDefs.curr_size);
-    // VxnTkDefs.defs = (VxnTkDef**)calloc(VxnTkDefs.curr_size, sizeof(VxnTkDef));
 }
 
 static void VxnTokenDefs_Resize() {
@@ -312,19 +315,133 @@ typedef struct VxnTk {
     char*     value;
 } VxnTk;
 
-VxnTk* VxnTk_New(int order, VxnTkDef* def, const char* value) {
-    VxnTk* tk = VXN_TK_PTR_MALLOC(VxnTk);
+char* VxnTk_Str(VxnTk* this) {
+    char* buf = VXN_TK_PTR_CALLOC(char, 128);
+    sprintf(
+        buf,
+        "[%s][%s: '%s']",
+        VxnTkKind_Str(this->def->kind),
+        this->def->name,
+        this->value);
+    return buf;
 }
 
-void VxnTk_Del(VxnTk* tk);
+VxnTk* VxnTk_New() {
+    return VXN_TK_PTR_MALLOC(VxnTk);
+}
+
+void VxnTk_Init(VxnTk* this, int order, VxnTkDef* def, const char* value) {
+    this->order = order;
+    this->def   = def;
+    this->value = VXN_TK_STR_MALLOC(value);
+    memcpy(this->value, value, strlen(value));
+}
+
+void VxnTk_Del(VxnTk* this) {
+    // We don't have to remove the definition as
+    // it is destroyed when _DumpDefs is called.
+    free(this->value);
+    free(this);
+}
 
 typedef struct VxnTkList {
     VxnTkList* head;
+    VxnTkList* tail;
     VxnTkList* next;
+    VxnTkList* prev;
     int        index;
     int        count;
     VxnTk*     token;
 } VxnTkList;
+
+VxnTkList* VxnTkList_New() {
+    VxnTkList* this = VXN_TK_PTR_MALLOC(VxnTkList);
+    this->head = this;
+    this->tail = NULL;
+    this->next = NULL;
+    this->prev = NULL;
+    this->index = -1;
+    this->count = -1;
+    this->token = NULL;
+    return this;
+}
+
+void VxnTkList_Init(VxnTkList* this, const char* value, VxnTkList* head) {
+    // Parse token definition from value.
+    // Create token and set to this node.
+
+    // If `head` is NULL we can exit from here.
+    // Make sure to set index and count
+    // regardless as we will treat this as the
+    // head of the list.
+    if (head == NULL) {
+        this->index = 0;
+        this->count = 1;
+        this->tail  = this;
+        return;
+    }
+
+    this->head = head;
+    this->head->count++;
+    this->index = ++this->head->index;
+
+    this->prev = this->head->tail;
+    this->prev->next = this;
+    this->head->tail = this;
+}
+
+void VxnTkList_Del(VxnTkList* this) {
+    VxnTkList* head = this->head;
+    VxnTkList* next = head->next;
+    while (next != NULL) {
+        VXN_TK_INST_DEL(VxnTk, head->token);
+        free(head);
+
+        head = next;
+        next = head->next;
+    }
+}
+
+VxnTkList* VxnTkList_FindFromHead(VxnTkList* this, int index) {
+    VxnTkList* node = this->head;
+    while (node != NULL && node->index < index) {
+        node = node->next;
+    }
+    return node;
+}
+
+VxnTkList* VxnTkList_FindFromTail(VxnTkList* this, int index) {
+    VxnTkList* node = this->tail;
+    while (node != NULL && node->index > index) {
+        node = node->prev;
+    }
+    return node;
+}
+
+VxnTkList* VxnTkList_Find(VxnTkList* this, int index) {
+    VxnTkList* head = this->head;
+    VxnTkList* temp;
+    int diff;
+
+    // We want to determine if it is faster to
+    // start from the tail end of the list or the
+    // head to find the item at this index.
+    diff = -1 * (floor(head->count / 2) - (index + 1));
+    if (index == -1)
+        temp = head->tail;
+    else if (index == 0)
+        temp = head;
+    else if (diff <= 0)
+        temp = VxnTkList_FindFromHead(this, index);
+    else
+        temp = VxnTkList_FindFromTail(this, index);
+
+    return temp;
+}
+
+void VxnTkList_Insert(VxnTkList* this, VxnTkList* node, int index) {
+    VxnTkList* from = VxnTkList_Find(this, index);
+}
 
 #define VIXEN_TOKENS
 #endif
