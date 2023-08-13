@@ -1,4 +1,5 @@
 #ifndef VIXEN_TOKENS
+#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,8 +73,9 @@ char* VxnTkKind_Str(VxnTkKind k) {
 
 typedef struct VxnTkDef {
     VxnTkKind kind;
-    char*       name;
-    char*       value;
+    char*     name;
+    char*     value;
+    regex_t   value_reg;
 } VxnTkDef;
 
 // Creates a new token defintion.
@@ -88,6 +90,11 @@ VxnTkDef* VxnTkDef_New(VxnTkKind kind, const char* name, const char* value) {
     // Copy arguments into definition values.
     memcpy(def->name, name, strlen(name));
     memcpy(def->value, value, strlen(value));
+
+    if (regcomp(&(def->value_reg), def->value, REG_EXTENDED) != 0) {
+        fprintf(stderr, "error: could not compile token regex. '%s'\n", def->value);
+        exit(EXIT_FAILURE);
+    }
 
     return def;
 }
@@ -162,7 +169,7 @@ static void VxnTokenDefs_Add(
     if (VxnTokenDefs_PreCheck()) {
         VxnTkDefs.defs[VxnTkDefs.count++] = VxnTkDef_New(kind, name, value);
     } else {
-        perror("token register reached maximum stack size.");
+        fprintf(stderr, "error: token register reached maximum stack size.\n");
         exit(EXIT_FAILURE);
     }
 }
@@ -175,14 +182,23 @@ static void VxnTokens_LoadDefs() {
     VxnTokenDefs_Init();
 
     // Define float pattern.
-    VxnTokenDefs_Add(Tk_FLOAT, "FLOATING-NUMBER", "\\d+\\.\\d+");
+    VxnTokenDefs_Add(Tk_FLOAT, "FLT-NUMBER", "\\d+\\.\\d+");
+
     // Define identifier pattern.
     VxnTokenDefs_Add(Tk_IDENTIFIER, "IDENTIFIER", "\\w+");
 
     // Define integer pattern.
-    VxnTokenDefs_Add(Tk_INTEGER, "INTEGER-NUMBER", "\\d+");
+    VxnTokenDefs_Add(Tk_INTEGER, "BIN-NUMBER", "0b\\d+");
+    VxnTokenDefs_Add(Tk_INTEGER, "HEX-NUMBER", "0x\\d+");
+    VxnTokenDefs_Add(Tk_INTEGER, "INT-NUMBER", "\\d+");
+    VxnTokenDefs_Add(Tk_INTEGER, "OCT-NUMBER", "0o\\d+");
 
     // Define keyword patterns.
+    VxnTokenDefs_Add(Tk_KEYWORD, "IF-COND", "if");
+    VxnTokenDefs_Add(Tk_KEYWORD, "ELSE-COND", "else");
+    VxnTokenDefs_Add(Tk_KEYWORD, "ELIF-COND", "elif");
+    VxnTokenDefs_Add(Tk_KEYWORD, "WHILE-COND", "while");
+    VxnTokenDefs_Add(Tk_KEYWORD, "FOR-COND", "for");
     VxnTokenDefs_Add(Tk_KEYWORD, "DEFINE", "def");
     VxnTokenDefs_Add(Tk_KEYWORD, "DEFINE-CLASS", "class");
     VxnTokenDefs_Add(Tk_KEYWORD, "NEW", "new");
@@ -190,37 +206,38 @@ static void VxnTokens_LoadDefs() {
     // Define newline pattern.
     VxnTokenDefs_Add(Tk_NEWLINE, "NEWLINE", "\\n");
 
-    // Define operator patthers.
+    // Define operator patterns.
     VxnTokenDefs_Add(Tk_OPERATOR, "OPAS-SIGN", "=");
-    VxnTokenDefs_Add(Tk_OPERATOR, "OPPL-SIGN", "+");
+    VxnTokenDefs_Add(Tk_OPERATOR, "OPPL-SIGN", "\\+");
     VxnTokenDefs_Add(Tk_OPERATOR, "OPMS-SIGN", "-");
-    VxnTokenDefs_Add(Tk_OPERATOR, "OPMT-SIGN", "*");
-    VxnTokenDefs_Add(Tk_OPERATOR, "OPPW-SIGN", "**");
+    VxnTokenDefs_Add(Tk_OPERATOR, "OPMT-SIGN", "\\*");
+    VxnTokenDefs_Add(Tk_OPERATOR, "OPPW-SIGN", "\\*\\*");
     VxnTokenDefs_Add(Tk_OPERATOR, "OPDV-SIGN", "/");
     VxnTokenDefs_Add(Tk_OPERATOR, "OPMD-SIGN", "%");
     VxnTokenDefs_Add(Tk_OPERATOR, "BTND-SIGN", "&");
-    VxnTokenDefs_Add(Tk_OPERATOR, "BTOR-SIGN", "|");
+    VxnTokenDefs_Add(Tk_OPERATOR, "BTOR-SIGN", "\\|");
     VxnTokenDefs_Add(Tk_OPERATOR, "BTXR-SIGN", "^");
     VxnTokenDefs_Add(Tk_OPERATOR, "LGND-SIGN", "&&");
-    VxnTokenDefs_Add(Tk_OPERATOR, "LGOR-SIGN", "||");
+    VxnTokenDefs_Add(Tk_OPERATOR, "LGOR-SIGN", "\\|\\|");
     VxnTokenDefs_Add(Tk_OPERATOR, "LGNT-SIGN", "!");
     VxnTokenDefs_Add(Tk_OPERATOR, "LGGT-SIGN", ">");
     VxnTokenDefs_Add(Tk_OPERATOR, "LGLT-SIGN", "<");
     VxnTokenDefs_Add(Tk_OPERATOR, "LGEQ-SIGN", "==");
 
-    VxnTokenDefs_Add(Tk_STRING, "DBL-QUOTE", "\".*\"");
-    VxnTokenDefs_Add(Tk_STRING, "SGL-QUOTE", "'.*'");
-    VxnTokenDefs_Add(Tk_STRING, "DBLDOC-QUOTE", "\"\"\".*\"\"\"");
-    VxnTokenDefs_Add(Tk_STRING, "SGLDOC-QUOTE", "'''.*'''");
-    VxnTokenDefs_Add(Tk_STRING, "COMMENT", "#.*");
-    VxnTokenDefs_Add(Tk_STRING, "INLINE-COMMENT", "##.*##");
+    // Define string patterns.
+    VxnTokenDefs_Add(Tk_STRING, "DBL-QUOTE", "\"");
+    VxnTokenDefs_Add(Tk_STRING, "SGL-QUOTE", "'");
+    VxnTokenDefs_Add(Tk_STRING, "DBLDOC-QUOTE", "\"\"\"");
+    VxnTokenDefs_Add(Tk_STRING, "SGLDOC-QUOTE", "'''");
+    VxnTokenDefs_Add(Tk_STRING, "COMMENT", "#");
+    VxnTokenDefs_Add(Tk_STRING, "INLINE-COMMENT", "##");
 
     // Define syntax patterns.
-    VxnTokenDefs_Add(Tk_SYNTAX, "L-BRACKET", "[");
+    VxnTokenDefs_Add(Tk_SYNTAX, "L-BRACKET", "\\[");
     VxnTokenDefs_Add(Tk_SYNTAX, "R-BRACKET", "]");
-    VxnTokenDefs_Add(Tk_SYNTAX, "L-BRACE", "{");
+    VxnTokenDefs_Add(Tk_SYNTAX, "L-BRACE", "\{");
     VxnTokenDefs_Add(Tk_SYNTAX, "R-BRACE", "}");
-    VxnTokenDefs_Add(Tk_SYNTAX, "L-PAREN", "(");
+    VxnTokenDefs_Add(Tk_SYNTAX, "L-PAREN", "\\(");
     VxnTokenDefs_Add(Tk_SYNTAX, "R-PAREN", ")");
     VxnTokenDefs_Add(Tk_SYNTAX, "COMMA", ",");
     VxnTokenDefs_Add(Tk_SYNTAX, "SEMI-COLON", ";");
@@ -248,6 +265,7 @@ typedef struct vxn_tk {
     VxnTkKind kind;
     char*     value;
 } vxn_tk;
+
 
 #define VIXEN_TOKENS
 #endif

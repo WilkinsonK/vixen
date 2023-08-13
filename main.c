@@ -2,7 +2,7 @@
 
 int main(void) {
     VxnTokens_LoadDefs();
-    printf("\n\n");
+    VxnLexer_AnalyzeText("1 + 2");
     VxnTokens_DumpDefs();
     return 0;
 }
