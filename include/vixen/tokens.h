@@ -6,13 +6,37 @@
 
 // Maximum memory size allocated to register.
 #define VXN_TK_DEF_MAX 512
-
+// Delete a given vixen object by calling it's
+// `_Del` function.
+#define VXN_TK_INST_DEL(T, PTR) T##_Del(PTR)
+// Create an instance of type `T` by calling
+// it's `_New` function. Creates a raw instance,
+// does not populate other than default 'known'
+// values.
+#define VXN_TK_INST_NEW(T) T##_New()
+// Returns the string representation of the `T`
+// instance by calling it's `_Str` function.
+#define VXN_TK_INST_STR(T, PTR) T##_Str(PTR)
+// Allocates memory on the heap of size `SZ` as a
+// pointer of type `T`.
+#define VXN_TK_PTR_CALLOC(T, SZ) (T*)calloc(SZ, sizeof(T))
+// Allocates memory on the heap as a pointer of
+// type `T`.
+#define VXN_TK_PTR_MALLOC(T) (T*)malloc(sizeof(T))
+// Reallocate the memory space on the heap for a
+// pointer of type `T`.
+#define VXN_TK_PTR_REALLOC(T, PTR, SZ) (T*)realloc(PTR, SZ)
+// Allocates memory on the heap, as a dynamic
+// char array, large enough to hold `STR`.
+#define VXN_TK_STR_MALLOC(STR) (char*)malloc(strlen(STR))
 // Vixen token.
 typedef struct VxnTk VxnTk;
-// Supported token types.
-typedef enum VxnTkKind VxnTkKind;
 // A single token definition.
 typedef struct VxnTkDef VxnTkDef;
+// Supported token types.
+typedef enum VxnTkKind VxnTkKind;
+// Linked list containing tokens.
+typedef struct VxnTkList VxnTkList;
 // Initialize token definitions.
 static void VxnTokens_LoadDefs();
 // Destroy token definitions.
@@ -29,6 +53,19 @@ static void VxnTokenDefs_Add(VxnTkKind, const char*, const char*);
 // Removes a defintion from the top of the
 // register.
 static void VxnTokenDefs_Pop();
+// Create an empty list node.
+static VxnTkList* VxnTkList_New();
+// Initialize a new token list.
+static VxnTkList* VxnTkList_Init(VxnTkDef*, const char*);
+// Destroy the given list and all of it's
+//relatives.
+static void VxnTkList_Del(VxnTkList*);
+// Insert a token at the given index of the list.
+static void VxnTkList_Insert(VxnTkList*, VxnTkList*, int);
+// Insert a token at the end of the list.
+static void VxnTkList_Append(VxnTkList*, VxnTkList*);
+// Remove the child node from the linked list.
+static void VxnTkList_Remove(VxnTkList*, VxnTkList*);
 
 typedef enum VxnTkKind {
     Tk_ERROR,
@@ -78,45 +115,52 @@ typedef struct VxnTkDef {
     regex_t   value_reg;
 } VxnTkDef;
 
-// Creates a new token defintion.
-VxnTkDef* VxnTkDef_New(VxnTkKind kind, const char* name, const char* value) {
-
-    // Initialize an empty definition.
-    VxnTkDef* def = (VxnTkDef*)malloc(sizeof(VxnTkDef));
-    def->kind  = kind;
-    def->name  = (char*)malloc(strlen(name));
-    def->value = (char*)malloc(strlen(value));
-
-    // Copy arguments into definition values.
-    memcpy(def->name, name, strlen(name));
-    memcpy(def->value, value, strlen(value));
-
-    if (regcomp(&(def->value_reg), def->value, REG_EXTENDED) != 0) {
-        fprintf(stderr, "error: could not compile token regex. '%s'\n", def->value);
-        exit(EXIT_FAILURE);
-    }
-
-    return def;
-}
-
-// Remove definition from register.
-void VxnTkDef_Del(VxnTkDef* def) {
-    // Remove defintion attributes.
-    free(def->name);
-    free(def->value);
-    // Remove definition itself.
-    free(def);
-}
-
 // Get string representation of a definition.
-char* VxnTkDef_Str(VxnTkDef* def) {
-    char* buf = (char*)calloc(128, sizeof(char));
+char* VxnTkDef_Str(VxnTkDef* this) {
+    char* buf = VXN_TK_PTR_CALLOC(char, 128);
     sprintf(
         buf,
         "[definition][%s: \"%s\"]",
-        VxnTkKind_Str(def->kind),
-        def->value);
+        VxnTkKind_Str(this->kind),
+        this->value);
     return buf;
+}
+
+// Creates a new token defintion.
+VxnTkDef* VxnTkDef_New() {
+    // Initialize an empty definition.
+    return VXN_TK_PTR_MALLOC(VxnTkDef);
+}
+
+// Initializes a new token definition.
+void VxnTkDef_Init(
+    VxnTkDef* this, VxnTkKind kind, const char* name, const char* value) {
+
+    this->kind  = kind;
+    this->name  = VXN_TK_STR_MALLOC(name);
+    this->value = VXN_TK_STR_MALLOC(value);
+
+    // Copy arguments into definition values.
+    memcpy(this->name, name, strlen(name));
+    memcpy(this->value, value, strlen(value));
+
+    if (regcomp(&(this->value_reg), this->value, REG_EXTENDED) != 0) {
+        fprintf(
+            stderr,
+            "error: could not compile token regex. '%s'\n",
+            this->value);
+        exit(EXIT_FAILURE);
+    }
+}
+
+// Remove definition from register.
+void VxnTkDef_Del(VxnTkDef* this) {
+    // Remove defintion attributes.
+    free(this->name);
+    free(this->value);
+    regfree(&(this->value_reg));
+    // Remove definition itself.
+    free(this);
 }
 
 // Token definition register.
@@ -136,7 +180,8 @@ static void VxnTokenDefs_Init() {
     // sequence.
     VxnTkDefs.curr_size = 0;
     VxnTkDefs.prev_size = 1;
-    VxnTkDefs.defs = (VxnTkDef**)calloc(VxnTkDefs.curr_size, sizeof(VxnTkDef));
+    VxnTkDefs.defs = VXN_TK_PTR_CALLOC(VxnTkDef*, VxnTkDefs.curr_size);
+    // VxnTkDefs.defs = (VxnTkDef**)calloc(VxnTkDefs.curr_size, sizeof(VxnTkDef));
 }
 
 static void VxnTokenDefs_Resize() {
@@ -145,13 +190,11 @@ static void VxnTokenDefs_Resize() {
     VxnTkDefs.prev_size = VxnTkDefs.curr_size - VxnTkDefs.prev_size;
 
     // Request new size from system.
-    int new_size      = (sizeof(VxnTkDef) * VxnTkDefs.curr_size);
-    VxnTkDef** defs = VxnTkDefs.defs;
-    VxnTkDefs.defs  = (VxnTkDef**)realloc(defs, new_size);
+    int new_size   = (sizeof(VxnTkDef) * VxnTkDefs.curr_size);
+    VxnTkDefs.defs = VXN_TK_PTR_REALLOC(VxnTkDef*, VxnTkDefs.defs, new_size);
 }
 
 static int VxnTokenDefs_PreCheck() {
-    // Panic if token maximum is reached.
     if ((VxnTkDefs.count + 1) < VxnTkDefs.curr_size)
         return 1;
 
@@ -167,7 +210,9 @@ static void VxnTokenDefs_Add(
     VxnTkKind kind, const char* name, const char* value) {
 
     if (VxnTokenDefs_PreCheck()) {
-        VxnTkDefs.defs[VxnTkDefs.count++] = VxnTkDef_New(kind, name, value);
+        VxnTkDef* def = VXN_TK_INST_NEW(VxnTkDef);
+        VxnTkDef_Init(def, kind, name, value);
+        VxnTkDefs.defs[VxnTkDefs.count++] = def;
     } else {
         fprintf(stderr, "error: token register reached maximum stack size.\n");
         exit(EXIT_FAILURE);
@@ -175,7 +220,8 @@ static void VxnTokenDefs_Add(
 }
 
 static void VxnTokenDefs_Pop() {
-    VxnTkDef_Del(VxnTkDefs.defs[--VxnTkDefs.count]);
+    VxnTkDef* def = VxnTkDefs.defs[--VxnTkDefs.count];
+    VXN_TK_INST_DEL(VxnTkDef, def);
 }
 
 static void VxnTokens_LoadDefs() {
@@ -260,12 +306,25 @@ static void VxnTokens_DumpDefs() {
     free(VxnTkDefs.defs);
 }
 
-typedef struct vxn_tk {
+typedef struct VxnTk {
     int       order;
-    VxnTkKind kind;
+    VxnTkDef* def;
     char*     value;
-} vxn_tk;
+} VxnTk;
 
+VxnTk* VxnTk_New(int order, VxnTkDef* def, const char* value) {
+    VxnTk* tk = VXN_TK_PTR_MALLOC(VxnTk);
+}
+
+void VxnTk_Del(VxnTk* tk);
+
+typedef struct VxnTkList {
+    VxnTkList* head;
+    VxnTkList* next;
+    int        index;
+    int        count;
+    VxnTk*     token;
+} VxnTkList;
 
 #define VIXEN_TOKENS
 #endif
