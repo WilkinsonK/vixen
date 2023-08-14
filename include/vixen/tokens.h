@@ -64,8 +64,6 @@ void VxnTkList_Init(VxnTkList*, const char*, VxnTkList*);
 void VxnTkList_Del(VxnTkList*);
 // Find the list node at the given index.
 VxnTkList* VxnTkList_Find(VxnTkList*, int);
-// Insert a token at the given index of the list.
-void VxnTkList_Insert(VxnTkList*, VxnTkList*, int);
 // Insert a token at the end of the list.
 void VxnTkList_Append(VxnTkList*, VxnTkList*);
 // Remove the child node from the linked list.
@@ -230,6 +228,9 @@ static void VxnTokenDefs_Pop() {
 static void VxnTokens_LoadDefs() {
     VxnTokenDefs_Init();
 
+    // Define error definition.
+    VxnTokenDefs_Add(Tk_ERROR, "ERROR", "");
+
     // Define float pattern.
     VxnTokenDefs_Add(Tk_FLOAT, "FLT-NUMBER", "\\d+\\.\\d+");
 
@@ -381,13 +382,7 @@ void VxnTkList_Init(VxnTkList* this, const char* value, VxnTkList* head) {
         return;
     }
 
-    this->head = head;
-    this->head->count++;
-    this->index = ++this->head->index;
-
-    this->prev = this->head->tail;
-    this->prev->next = this;
-    this->head->tail = this;
+    VxnTkList_Append(head, this);
 }
 
 void VxnTkList_Del(VxnTkList* this) {
@@ -419,19 +414,20 @@ VxnTkList* VxnTkList_FindFromTail(VxnTkList* this, int index) {
 }
 
 VxnTkList* VxnTkList_Find(VxnTkList* this, int index) {
+    if (index == -1)
+        return this->head->tail;
+    if (index == 0)
+        return this->head;
+
+    int offset;
     VxnTkList* head = this->head;
     VxnTkList* temp;
-    int diff;
 
     // We want to determine if it is faster to
     // start from the tail end of the list or the
     // head to find the item at this index.
-    diff = -1 * (floor(head->count / 2) - (index + 1));
-    if (index == -1)
-        temp = head->tail;
-    else if (index == 0)
-        temp = head;
-    else if (diff <= 0)
+    offset = -1 * (floor(head->count / 2) - (index + 1));
+    if (offset <= 0)
         temp = VxnTkList_FindFromHead(this, index);
     else
         temp = VxnTkList_FindFromTail(this, index);
@@ -439,8 +435,14 @@ VxnTkList* VxnTkList_Find(VxnTkList* this, int index) {
     return temp;
 }
 
-void VxnTkList_Insert(VxnTkList* this, VxnTkList* node, int index) {
-    VxnTkList* from = VxnTkList_Find(this, index);
+void VxnTkList_Append(VxnTkList* this, VxnTkList* that) {
+    that->head = this;
+    that->head->count++;
+    that->index = ++that->head->index;
+
+    that->prev = that->head->tail;
+    that->prev->next = that;
+    that->head->tail = that;
 }
 
 #define VIXEN_TOKENS
