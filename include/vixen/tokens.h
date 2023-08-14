@@ -5,31 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "objects.h"
+
 // Maximum memory size allocated to register.
 #define VXN_TK_DEF_MAX 512
-// Delete a given vixen object by calling it's
-// `_Del` function.
-#define VXN_TK_INST_DEL(T, PTR) T##_Del(PTR)
-// Create an instance of type `T` by calling
-// it's `_New` function. Creates a raw instance,
-// does not populate other than default 'known'
-// values.
-#define VXN_TK_INST_NEW(T) T##_New()
-// Returns the string representation of the `T`
-// instance by calling it's `_Str` function.
-#define VXN_TK_INST_STR(T, PTR) T##_Str(PTR)
-// Allocates memory on the heap of size `SZ` as a
-// pointer of type `T`.
-#define VXN_TK_PTR_CALLOC(T, SZ) (T*)calloc(SZ, sizeof(T))
-// Allocates memory on the heap as a pointer of
-// type `T`.
-#define VXN_TK_PTR_MALLOC(T) (T*)malloc(sizeof(T))
-// Reallocate the memory space on the heap for a
-// pointer of type `T`.
-#define VXN_TK_PTR_REALLOC(T, PTR, SZ) (T*)realloc(PTR, SZ)
-// Allocates memory on the heap, as a dynamic
-// char array, large enough to hold `STR`.
-#define VXN_TK_STR_MALLOC(STR) (char*)malloc(strlen(STR))
 
 // Vixen token.
 typedef struct VxnTk VxnTk;
@@ -119,7 +98,7 @@ typedef struct VxnTkDef {
 
 // Get string representation of a definition.
 char* VxnTkDef_Str(VxnTkDef* this) {
-    char* buf = VXN_TK_PTR_CALLOC(char, 128);
+    char* buf = VixenPTR_calloc(char, 128);
     sprintf(
         buf,
         "[definition][%s: \"%s\"]",
@@ -131,7 +110,7 @@ char* VxnTkDef_Str(VxnTkDef* this) {
 // Creates a new token defintion.
 VxnTkDef* VxnTkDef_New() {
     // Initialize an empty definition.
-    return VXN_TK_PTR_MALLOC(VxnTkDef);
+    return VixenPTR_malloc(VxnTkDef);
 }
 
 // Initializes a new token definition.
@@ -139,8 +118,8 @@ void VxnTkDef_Init(
     VxnTkDef* this, VxnTkKind kind, const char* name, const char* value) {
 
     this->kind  = kind;
-    this->name  = VXN_TK_STR_MALLOC(name);
-    this->value = VXN_TK_STR_MALLOC(value);
+    this->name  = VixenSTR_malloc(name);
+    this->value = VixenSTR_malloc(value);
 
     // Copy arguments into definition values.
     memcpy(this->name, name, strlen(name));
@@ -182,7 +161,7 @@ static void VxnTokenDefs_Init() {
     // sequence.
     VxnTkDefs.curr_size = 0;
     VxnTkDefs.prev_size = 1;
-    VxnTkDefs.defs = VXN_TK_PTR_CALLOC(VxnTkDef*, VxnTkDefs.curr_size);
+    VxnTkDefs.defs = VixenPTR_calloc(VxnTkDef*, VxnTkDefs.curr_size);
 }
 
 static void VxnTokenDefs_Resize() {
@@ -192,7 +171,7 @@ static void VxnTokenDefs_Resize() {
 
     // Request new size from system.
     int new_size   = (sizeof(VxnTkDef) * VxnTkDefs.curr_size);
-    VxnTkDefs.defs = VXN_TK_PTR_REALLOC(VxnTkDef*, VxnTkDefs.defs, new_size);
+    VxnTkDefs.defs = VixenPTR_realloc(VxnTkDef*, VxnTkDefs.defs, new_size);
 }
 
 static int VxnTokenDefs_PreCheck() {
@@ -211,7 +190,7 @@ static void VxnTokenDefs_Add(
     VxnTkKind kind, const char* name, const char* value) {
 
     if (VxnTokenDefs_PreCheck()) {
-        VxnTkDef* def = VXN_TK_INST_NEW(VxnTkDef);
+        VxnTkDef* def = VixenObject_New(VxnTkDef);
         VxnTkDef_Init(def, kind, name, value);
         VxnTkDefs.defs[VxnTkDefs.count++] = def;
     } else {
@@ -222,7 +201,7 @@ static void VxnTokenDefs_Add(
 
 static void VxnTokenDefs_Pop() {
     VxnTkDef* def = VxnTkDefs.defs[--VxnTkDefs.count];
-    VXN_TK_INST_DEL(VxnTkDef, def);
+    VixenObject_Del(VxnTkDef, def);
 }
 
 static void VxnTokens_LoadDefs() {
@@ -317,7 +296,7 @@ typedef struct VxnTk {
 } VxnTk;
 
 char* VxnTk_Str(VxnTk* this) {
-    char* buf = VXN_TK_PTR_CALLOC(char, 128);
+    char* buf = VixenPTR_calloc(char, 128);
     sprintf(
         buf,
         "[%s][%s: '%s']",
@@ -328,13 +307,13 @@ char* VxnTk_Str(VxnTk* this) {
 }
 
 VxnTk* VxnTk_New() {
-    return VXN_TK_PTR_MALLOC(VxnTk);
+    return VixenPTR_malloc(VxnTk);
 }
 
 void VxnTk_Init(VxnTk* this, int order, VxnTkDef* def, const char* value) {
     this->order = order;
     this->def   = def;
-    this->value = VXN_TK_STR_MALLOC(value);
+    this->value = VixenSTR_malloc(value);
     memcpy(this->value, value, strlen(value));
 }
 
@@ -356,7 +335,7 @@ typedef struct VxnTkList {
 } VxnTkList;
 
 VxnTkList* VxnTkList_New() {
-    VxnTkList* this = VXN_TK_PTR_MALLOC(VxnTkList);
+    VxnTkList* this = VixenPTR_malloc(VxnTkList);
     this->head = this;
     this->tail = NULL;
     this->next = NULL;
@@ -389,7 +368,7 @@ void VxnTkList_Del(VxnTkList* this) {
     VxnTkList* head = this->head;
     VxnTkList* next = head->next;
     while (next != NULL) {
-        VXN_TK_INST_DEL(VxnTk, head->token);
+        VixenObject_Del(VxnTk, head->token);
         free(head);
 
         head = next;
