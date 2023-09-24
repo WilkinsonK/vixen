@@ -44,11 +44,17 @@ class SymbolParser:
         not.
         """
 
-        return self.read_head == (len(self.data) - 1)
+        return self.read_head == len(self.data)
 
     def head(self):
         """Character at read head."""
 
+        # Fixes a bug where iterating to `the end`
+        # does not always return the last symbol.
+        # In particular, when the final symbol is
+        # 1 char long.
+        if self.read_head == len(self.data):
+            return self.data[-1]
         return self.data[self.read_head]
 
     def lookahead(self, head: int):
@@ -60,7 +66,7 @@ class SymbolParser:
         return self.data[self.read_head:self.read_head+head]
 
     def next(self):
-        """Get next symbol."""
+        """Parse next symbol."""
 
         symbol = bytearray()
 
@@ -184,7 +190,6 @@ def main():
     reader = SymbolParser("\nx: int = 0;\nc: str = '''d%'-'`''';\nx++; s: flt = 49.9.3;")
     while not reader.end():
         print(reader.next())
-    print(reader.next())
 
     return 0
 
