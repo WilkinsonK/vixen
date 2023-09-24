@@ -75,11 +75,11 @@ class SymbolParser:
                 # Punctuation cannot exist in a name.
                 # Unless said name is numeric, then
                 # '.' is accepted.
-                if self.symbol_isvalidname(symbol):
+                if not self.symbol_isvalidname(symbol):
                     if not self.symbol_isnumeric(symbol):
                         break
                 # Names cannot exist in punctuation.
-                if self.symbol_isvalidpunc(symbol):
+                if not self.symbol_isvalidpunc(symbol):
                     break
                 # Terminator char must start new
                 # sequence.
@@ -127,7 +127,7 @@ class SymbolParser:
         name.
         """
 
-        return _symbol_isname(symbol) and _char_ispuncchar(self.head())
+        return not (_symbol_isname(symbol) and _char_ispuncchar(self.head()))
 
     def symbol_isvalidpunc(self, symbol: bytearray):
         """
@@ -135,7 +135,7 @@ class SymbolParser:
         punctuation.
         """
 
-        return _symbol_ispunc(symbol) and _char_isnamechar(self.head())
+        return not (_symbol_ispunc(symbol) and _char_isnamechar(self.head()))
 
     def symbol_terminated(self, symbol: bytearray):
         """
