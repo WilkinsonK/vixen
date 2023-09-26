@@ -17,6 +17,11 @@ WHITESPACE = string.whitespace.encode()
 
 
 class SymbolParser:
+    """
+    Parses a buffer of data into symbols that are
+    usable for token parsing.
+    """
+
     data:           bytes
     current_char:   int
     read_head:      int
