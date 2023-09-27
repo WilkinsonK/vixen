@@ -92,6 +92,9 @@ class SymbolParser:
                 self.advance()
 
             while _char_iscomment(self.head()):
+                # Comments cannot exist inline with code.
+                # The end of comments are determined
+                # based on the end of line or EOF.
                 while not _char_isnewline(self.head()) and not self.end():
                     self.advance()
                 # Second pass ensures additional whitespace
