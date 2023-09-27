@@ -1,8 +1,12 @@
+import os
 import string
 
+COMMENT_CHAR = b"#"
 DIGIT_CHARS = string.digits.encode()
 DIGIT_SEP_CHARS = b"."
+END_OF_FILE = bytearray(b"EOF")
 NAME_CHARS = (string.ascii_letters + string.digits + "_").encode()
+NEWLINE_CHAR = os.linesep.encode()
 STR_CHARS = b"'\""
 STR_SYMBOLS = (
     bytearray(b"\""),
@@ -49,7 +53,7 @@ class SymbolParser:
         not.
         """
 
-        return self.read_head == len(self.data)
+        return self.read_head >= len(self.data)
 
     def head(self):
         """Character at read head."""
@@ -58,9 +62,17 @@ class SymbolParser:
         # does not always return the last symbol.
         # In particular, when the final symbol is
         # 1 char long.
-        if self.read_head == len(self.data):
+        if self.read_head >= len(self.data):
             return self.data[-1]
         return self.data[self.read_head]
+
+    def isnoparse(self):
+        """
+        Read head is a character not meant to be
+        parsed.
+        """
+
+        return self.head() in WHITESPACE
 
     def lookahead(self, head: int):
         """
@@ -75,11 +87,23 @@ class SymbolParser:
 
         symbol = bytearray()
 
-        while self.head() in WHITESPACE and not self.string_parsing:
-            self.advance()
+        if not self.string_parsing:
+            while self.isnoparse() and not self.end():
+                self.advance()
+
+            while _char_iscomment(self.head()):
+                while not _char_isnewline(self.head()) and not self.end():
+                    self.advance()
+                # Second pass ensures additional whitespace
+                # after a comment is eliminated.
+                while self.isnoparse() and not self.end():
+                    self.advance()
+
+            if self.end():
+                return END_OF_FILE
 
         while True:
-            if self.head() in WHITESPACE and not self.string_parsing:
+            if self.isnoparse() and not self.string_parsing:
                 break
 
             if not self.string_parsing:
@@ -154,7 +178,16 @@ class SymbolParser:
         char in read head.
         """
 
-        return _symbol_ispunc(symbol) and _char_istermchar(self.head())
+        return (
+            _symbol_ispunc(symbol)
+            and (
+                _char_istermchar(self.head())
+                or _char_iscomment(self.head())
+            ))
+
+
+def _char_iscomment(char: bytes | int):
+    return char in COMMENT_CHAR
 
 
 def _char_isdigitsep(char: bytes | int):
@@ -163,6 +196,10 @@ def _char_isdigitsep(char: bytes | int):
 
 def _char_isnamechar(char: bytes | int):
     return char in NAME_CHARS
+
+
+def _char_isnewline(char: bytes | int):
+    return char in NEWLINE_CHAR
 
 
 def _char_ispuncchar(char: bytes | int):
@@ -192,9 +229,11 @@ def _symbol_ispunc(symbol: bytearray):
 
 
 def main():
-    reader = SymbolParser("\nx: int = 0;\nc: str = '''d%'-'`''';\nx++; s: flt = 49.9.3;")
+    with open("grammar/parse_test.vxn", "rb") as fd:
+        reader = SymbolParser(fd.read())
+
     while not reader.end():
-        print(reader.next())
+        print("SYMBOL:", reader.next())
 
     return 0
 
