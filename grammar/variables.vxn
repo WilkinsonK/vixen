@@ -1,0 +1,12 @@
+# Initialization of variables
+# <name>: <type> = <value>;
+some_float:     flt  = 2.15;
+some_integer:   int  = 0;
+some_character: chr  = 'b';
+some_string:    str  = "Brown fox";
+some_pointer:   flt* = &some_float;
+
+# Numeric operations on variables
+some_float += 0.15;
+some_integer++; # decrement operator (--) will follow suit.
+++some_integer;
