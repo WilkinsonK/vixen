@@ -1,7 +1,21 @@
+#!/bin/python3
+"""
+symbols.py
+---
+
+Author: Keenan W. Wilkinson
+Date: 29 Sep 2023
+---
+
+Defines objects which parses out streams of data into symbols more
+digestable by some other process. Lexical analysis or AST parsing for
+example.
+"""
+
 import os
 import string
 
-Lineno = Column = int
+Column = Lineno = int
 Symbol = bytearray
 
 COMMENT_CHAR = b"#"
@@ -127,6 +141,18 @@ class SymbolParser:
                 if not symbol_isname(symbol, self.head()):
                     if not symbol_isnumeric(symbol, self.head()):
                         break
+
+                # Braces, Brackets and Parenthesis
+                # should exist solely on their own.
+                # Ensure that L & R symbols are not
+                # concatentated together.
+                if symbol_isclosedb(symbol, self.head()):
+                    break
+                if symbol_isclosedp(symbol, self.head()):
+                    break
+                if symbol_iscloseds(symbol, self.head()):
+                    break
+
                 # Names cannot exist in punctuation.
                 if not symbol_ispunc(symbol, self.head()):
                     break
@@ -170,6 +196,18 @@ def char_isdigitsep(char: bytes | int):
     return char in DIGIT_SEP_CHARS
 
 
+def char_islbrace(char: bytes | int):
+    return char in b"{"
+
+
+def char_islparen(char: bytes | int):
+    return char in b"("
+
+
+def char_islsqbrk(char: bytes | int):
+    return char in b"["
+
+
 def char_isnamechar(char: bytes | int):
     return char in NAME_CHARS
 
@@ -186,8 +224,41 @@ def char_ispuncchar(char: bytes | int):
     return char not in NAME_CHARS
 
 
+def char_isrbrace(char: bytes | int):
+    return char in b"}"
+
+
+def char_isrparen(char: bytes | int):
+    return char in b")"
+
+
+def char_isrsqbrk(char: bytes | int):
+    return char in b"]"
+
+
 def char_istermchar(char: bytes | int):
     return any([char == tc for tc in TERM_CHARS])
+
+
+def symbol_isclosedb(symbol: bytearray, next_char: bytes | int):
+    return bool(
+        symbol
+        and char_islbrace(symbol[0])
+        and char_isrbrace(next_char))
+
+
+def symbol_isclosedp(symbol: bytearray, next_char: bytes | int):
+    return bool(
+        symbol
+        and char_islparen(symbol[0])
+        and char_isrparen(next_char))
+
+
+def symbol_iscloseds(symbol: bytearray, next_char: bytes | int):
+    return bool(
+        symbol
+        and char_islsqbrk(symbol[0])
+        and char_isrsqbrk(next_char))
 
 
 def symbol_isname(symbol: bytearray, next_char: bytes | int):
