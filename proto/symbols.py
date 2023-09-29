@@ -234,6 +234,12 @@ class SymbolParser:
                     break
                 if char_iscomment(self.head()):
                     break
+                if symbol_isclosedb(symbol, self.head()):
+                    break
+                if symbol_isclosedp(symbol, self.head()):
+                    break
+                if symbol_iscloseds(symbol, self.head()):
+                    break
                 if char_istermchar(self.head()):
                     break
                 # Names cannot exist in punctuation.
