@@ -72,6 +72,38 @@ class SymbolParser:
 
         self.read_head += 1
 
+    def advance_whitespace(self):
+        """
+        Move the read head to next valid
+        non-whitespace character.
+        """
+
+        if self.string_parsing:
+            return
+
+        while char_isnoparse(self.head()) and not self.end():
+            self.advance()
+
+    def advance_comments(self):
+        """
+        Move the read head to next valid
+        non-comment character.
+        """
+
+        if self.string_parsing:
+            return
+
+        while char_iscomment(self.head()):
+            # Comments cannot exist inline with code.
+            # The end of comments are determined
+            # based on the end of line or EOF.
+            while not char_isnewline(self.head()) and not self.end():
+                self.advance()
+
+            # Second pass ensures additional whitespace
+            # after a comment is eliminated.
+            self.advance_whitespace()
+
     def end(self):
         """
         Read head is at the end of data stream or
@@ -104,92 +136,143 @@ class SymbolParser:
 
         return memoryview(self.data)[self.read_head:self.read_head+head]
 
+    def lookahead_matchlast(self):
+        """
+        The last symbol parsed is equal to the
+        lookahead slice.
+        """
+
+        return self.lookahead(len(self.last_symbol)) == self.last_symbol
+
     def next(self) -> tuple[Lineno, Column, Symbol]:
         """Parse next symbol."""
 
+        # Advance past all whitespace and chars
+        # considered invalid for parsing.
+        # This includes characters after a comment
+        # char (#) and newline chars.
+        self.advance_whitespace()
+        self.advance_comments()
+
+        # This should always be checked to prevent
+        # bone-headed calls to 'next' when there's
+        # nothing left to parse.
+        if self.end():
+            symbol = END_OF_FILE if self.lineno() else END_OF_LINE
+            return self.lineno(), 0, symbol
+
+        # Determine what we are most likely parsing.
+        if char_isnamechar(self.head()) and not char_isdigitchar(self.head()):
+            nexter = self.next_name
+        elif char_isdigitchar(self.head()):
+            nexter = self.next_numeric
+        else:
+            nexter = self.next_punc
+
+        token = nexter()
+        self.last_symbol = token[2]
+
+        return token
+
+    def next_name(self) -> tuple[Lineno, Column, Symbol]:
+        """Parse next name symbol."""
+
         symbol = bytearray()
-        column = 0
-
-        if not self.string_parsing:
-            while char_isnoparse(self.head()) and not self.end():
-                self.advance()
-
-            while char_iscomment(self.head()):
-                # Comments cannot exist inline with code.
-                # The end of comments are determined
-                # based on the end of line or EOF.
-                while not char_isnewline(self.head()) and not self.end():
-                    self.advance()
-                # Second pass ensures additional whitespace
-                # after a comment is eliminated.
-                while char_isnoparse(self.head()) and not self.end():
-                    self.advance()
-
-            if self.end():
-                return self.lineno(), column, END_OF_FILE
+        column = (self.read_head - self.last_line_at)
 
         while True:
+            symbol.append(self.head())
+            self.advance()
+
+            if char_isnoparse(self.head()):
+                break
+            if char_iscomment(self.head()):
+                break
+            if char_istermchar(self.head()):
+                break
+            # Punctuation cannot exist in a name.
+            # Unless said name is numeric, then
+            # '.' is accepted.
+            if not symbol_isvalidname(symbol, self.head()):
+                break
+
+        return self.lineno(), column, symbol
+
+    def next_numeric(self) -> tuple[Lineno, Column, Symbol]:
+        """Parse next numeric symbol."""
+
+        symbol = bytearray()
+        column = (self.read_head - self.last_line_at)
+
+        while True:
+            symbol.append(self.head())
+            self.advance()
+
+            if char_isnoparse(self.head()):
+                break
+            if char_iscomment(self.head()):
+                break
+            if char_istermchar(self.head()):
+                break
+            if not symbol_isvalidnum(symbol, self.head()):
+                break
+
+        return self.lineno(), column, symbol
+
+    def next_punc(self) -> tuple[Lineno, Column, Symbol]:
+        """Parse next punctuation symbol."""
+
+        symbol = bytearray()
+        column = (self.read_head - self.last_line_at)
+
+        while True:
+            symbol.append(self.head())
+            self.advance()
+
             if not self.string_parsing:
                 if char_isnoparse(self.head()):
                     break
                 if char_iscomment(self.head()):
                     break
-
-                # Punctuation cannot exist in a name.
-                # Unless said name is numeric, then
-                # '.' is accepted.
-                if not symbol_isname(symbol, self.head()):
-                    if not symbol_isnumeric(symbol, self.head()):
-                        break
-
-                # Braces, Brackets and Parenthesis
-                # should exist solely on their own.
-                # Ensure that L & R symbols are not
-                # concatentated together.
-                if symbol_isclosedb(symbol, self.head()):
+                if char_istermchar(self.head()):
                     break
-                if symbol_isclosedp(symbol, self.head()):
-                    break
-                if symbol_iscloseds(symbol, self.head()):
-                    break
-
                 # Names cannot exist in punctuation.
-                if not symbol_ispunc(symbol, self.head()):
+                if not symbol_isvalidpunc(symbol, self.head()):
                     break
 
-                # Terminator char must start new
-                # sequence.
-                if symbol_istermed(symbol, self.head()):
-                    break
+            if symbol_isstrsym(symbol):
+                self.string_parsing = not self.string_parsing
 
-            # Indescriminate string parsing.
-            elif self.head() in self.last_symbol:
-                # String termination must match
-                # string initiation.
-                if self.lookahead(len(self.last_symbol)) == self.last_symbol:
-                    break
+        return self.lineno(), column, symbol
 
-            # String termination should terminate
-            # string parsing.
-            elif symbol_isstrsym(symbol):
-                break
+    def next_string(self) -> tuple[Lineno, Column, Symbol]:
+        """Parse the next string symbol."""
 
-            if self.end():
-                break
+        symbol = bytearray()
+        column = (self.read_head - self.last_line_at)
 
-            column = (self.read_head - self.last_line_at) - len(symbol)
+        while True:
             symbol.append(self.head())
             self.advance()
 
-        self.last_symbol = symbol
-        if symbol_isstrsym(symbol):
-            self.string_parsing = not self.string_parsing
+            if symbol_isstrsym(symbol):
+                break
+            # The next sequence of characters
+            # matches the previous symbol.
+            if self.lookahead_matchlast():
+                break
+            if self.head() not in self.last_symbol:
+                continue
 
         return self.lineno(), column, symbol
 
 
 def char_iscomment(char: bytes | int):
     return char in COMMENT_CHAR
+
+
+def char_isdigitchar(char: bytes | int):
+    return char in DIGIT_CHARS
 
 
 def char_isdigitsep(char: bytes | int):
@@ -261,31 +344,34 @@ def symbol_iscloseds(symbol: bytearray, next_char: bytes | int):
         and char_isrsqbrk(next_char))
 
 
-def symbol_isname(symbol: bytearray, next_char: bytes | int):
-    return not (
-        bool(
-            symbol
-            and symbol[0] in NAME_CHARS
-            and symbol[-1] in NAME_CHARS)
-        and char_ispuncchar(next_char))
-
-
-def symbol_isnumeric(symbol: bytearray, next_char: bytes | int):
+def symbol_isname(symbol: bytearray):
     return bool(
         symbol
-        and all([i in DIGIT_CHARS + DIGIT_SEP_CHARS for i in symbol])
-        and char_isdigitsep(next_char)
-        and (symbol.count(b".") + 1 < 2)
-    )
+        and symbol[0] in NAME_CHARS
+        and symbol[0] not in DIGIT_CHARS
+        and symbol[-1] in NAME_CHARS)
 
 
-def symbol_ispunc(symbol: bytearray, next_char: bytes | int):
-    return not (
-        bool(
-            symbol
-            and symbol[0] not in NAME_CHARS
-            and symbol[-1] not in NAME_CHARS)
-        and char_isnamechar(next_char))
+def symbol_isnumeric(symbol: bytearray):
+    if not bool(symbol and any([i in DIGIT_CHARS for i in symbol])):
+        return False
+
+    for ch in DIGIT_SEP_CHARS[1:]:
+        if ch in symbol and b"." in symbol:
+            return False
+
+    for ch in symbol:
+        if ch not in DIGIT_CHARS + DIGIT_SEP_CHARS:
+            return False
+
+    return (symbol.count(b".") < 2)
+
+
+def symbol_ispunc(symbol: bytearray):
+    return bool(
+        symbol
+        and symbol[0] not in NAME_CHARS
+        and symbol[-1] not in NAME_CHARS)
 
 
 def symbol_isstrsym(symbol: bytearray):
@@ -297,6 +383,25 @@ def symbol_istermed(symbol: bytearray, next_char: bytes | int):
         symbol
         and any([tc not in symbol for tc in TERM_CHARS])
         and char_istermchar(next_char))
+
+
+def symbol_isvalidname(symbol: bytearray, next_char: bytes | int):
+    return (symbol_isname(symbol) and not char_ispuncchar(next_char))
+
+
+def symbol_isvalidnum(symbol: bytearray, next_char: bytes | int):
+    isnumeric = symbol_isnumeric(symbol)
+    if not isnumeric:
+        return False
+
+    if b"." in symbol:
+        return not char_isdigitsep(next_char)
+
+    return isnumeric
+
+
+def symbol_isvalidpunc(symbol: bytearray, next_char: bytes | int):
+    return not (symbol_ispunc(symbol) and char_isnamechar(next_char))
 
 
 def main():
@@ -312,9 +417,7 @@ def main():
         (6, 2, bytearray(b':')),
         (6, 4, bytearray(b'str')),
         (6, 8, bytearray(b'=')),
-        (6, 10, bytearray(b"\'\'\'")),
-        (6, 13, bytearray(b"d%\'-\'`")),
-        (6, 19, bytearray(b"\'\'\'")),
+        (6, 10, bytearray(b"\'\'\'d%\'-\'`\'\'\'")),
         (6, 22, bytearray(b';')),
         (7, 1, bytearray(b'x')),
         (7, 2, bytearray(b'++')),
