@@ -15,9 +15,21 @@ class Registers(enum.Enum, metaclass=enum.EnumType):
     """
 
 
-class RegistersLinux_x86_64(Registers):
-    rax = enum.auto()
-    rdi = enum.auto()
+class SysArchitecture(typing.Protocol):
+    """
+    Represents system architecture.
+    """
+
+    class registers(Registers):
+        """Registers available to this arch."""
+
+
+class x86_64(SysArchitecture):
+
+    class registers(Registers):
+        rax = enum.auto()
+        rbx = enum.auto()
+        rdi = enum.auto()
 
 
 def cmdglobal(name: bytes):
@@ -41,4 +53,4 @@ def opmov(reg: Registers, data: bytes):
 
 
 if __name__ == "__main__":
-    print(opmov(RegistersLinux_x86_64.rax, b"42"))
+    print(opmov(x86_64.registers.rax, b"42"))
