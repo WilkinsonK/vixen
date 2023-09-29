@@ -5,6 +5,7 @@ COMMENT_CHAR = b"#"
 DIGIT_CHARS = string.digits.encode()
 DIGIT_SEP_CHARS = b"."
 END_OF_FILE = bytearray(b"EOF")
+END_OF_LINE = bytearray(b"EOL")
 NAME_CHARS = (string.ascii_letters + string.digits + "_").encode()
 NEWLINE_CHAR = os.linesep.encode()
 STR_CHARS = b"'\""
@@ -27,19 +28,18 @@ class SymbolParser:
     """
 
     data:           bytes
-    current_char:   int
     read_head:      int
-    string_parsing: bool
     last_symbol:    bytearray
+    string_parsing: bool
 
     def __init__(self, data: bytes | str):
 
         if isinstance(data, str):
             data = data.encode()
 
-        self.read_head = 0
-        self.data = data
-        self.last_symbol = bytearray()
+        self.data           = data
+        self.last_symbol    = bytearray()
+        self.read_head      = 0
         self.string_parsing = False
 
     def advance(self):
@@ -80,7 +80,7 @@ class SymbolParser:
         data stream relative to read head.
         """
 
-        return self.data[self.read_head:self.read_head+head]
+        return memoryview(self.data)[self.read_head:self.read_head+head]
 
     def next(self):
         """Parse next symbol."""
@@ -103,7 +103,7 @@ class SymbolParser:
                     self.advance()
 
             if self.end():
-                return END_OF_FILE
+                return END_OF_LINE
 
         while True:
             if self.isnoparse() and not self.string_parsing:
