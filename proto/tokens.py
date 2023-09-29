@@ -90,9 +90,6 @@ class SymbolParser:
 
         return memoryview(self.data)[self.read_head:self.read_head+head]
 
-    # New next implementation should return a
-    # triplet of values.
-    # (lineno, column_start, symbol)
     def next(self) -> tuple[Lineno, Column, Symbol]:
         """Parse next symbol."""
 
