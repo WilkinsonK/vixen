@@ -20,7 +20,7 @@ Symbol = bytearray
 
 COMMENT_CHAR = b"#"
 DIGIT_CHARS = string.digits.encode()
-DIGIT_SEP_CHARS = b"."
+DIGIT_SEP_CHARS = b".xbo"
 END_OF_FILE = bytearray(b"EOF")
 END_OF_LINE = bytearray(b"EOL")
 NAME_CHARS = (string.ascii_letters + string.digits + "_").encode()
@@ -126,7 +126,7 @@ class SymbolParser:
                     self.advance()
 
             if self.end():
-                return self.lineno(), column, END_OF_LINE
+                return self.lineno(), column, END_OF_FILE
 
         while True:
             if not self.string_parsing:
@@ -174,11 +174,11 @@ class SymbolParser:
             elif symbol_isstrsym(symbol):
                 break
 
-            column = (self.read_head - self.last_line_at) - len(symbol)
-            symbol.append(self.head())
-
             if self.end():
                 break
+
+            column = (self.read_head - self.last_line_at) - len(symbol)
+            symbol.append(self.head())
             self.advance()
 
         self.last_symbol = symbol
@@ -275,7 +275,8 @@ def symbol_isnumeric(symbol: bytearray, next_char: bytes | int):
         symbol
         and all([i in DIGIT_CHARS + DIGIT_SEP_CHARS for i in symbol])
         and char_isdigitsep(next_char)
-        and (symbol.count(b".") + 1) < 2)
+        and (symbol.count(b".") + 1 < 2)
+    )
 
 
 def symbol_ispunc(symbol: bytearray, next_char: bytes | int):
@@ -326,7 +327,7 @@ def main():
         (7, 19, bytearray(b'.')),
         (7, 20, bytearray(b'3')),
         (7, 21, bytearray(b';')),
-        (10, 0, bytearray(b'EOL'))
+        (10, 0, bytearray(b'EOF'))
     ]
 
     with open("grammar/parse_test.vxn", "rb") as fd:
