@@ -12,6 +12,7 @@ digestable by some other process. Lexical analysis or AST parsing for
 example.
 """
 
+import io
 import os
 import string
 
@@ -46,22 +47,28 @@ class SymbolParser:
 
     data:             bytes
     dimension_line:   int
+    file:             bytes | None
     last_line_at:     int
     last_symbol:      bytearray
     read_head:        int
     string_parsing:   bool
 
-    def __init__(self, data: bytes | str):
-
-        if isinstance(data, str):
-            data = data.encode()
+    def __init__(self, data: bytes | str | io.BufferedReader):
 
         self.dimension_line = 1
-        self.data = data
+        self.file = None
         self.last_line_at = 0
         self.last_symbol = bytearray()
         self.read_head = 0
         self.string_parsing = False
+
+        if isinstance(data, str):
+            self.data = data.encode()
+        elif isinstance(data, io.BufferedReader):
+            self.file = data.name.encode()
+            self.data = data.read()
+        else:
+            self.data = data
 
     def advance(self):
         """Move the read head forward."""

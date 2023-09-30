@@ -138,9 +138,9 @@ class Token:
 
     def __init__(
         self,
-        symbol: Symbol,
         lineno: Lineno,
         column: Column,
+        symbol: Symbol,
         file: bytes | None = None):
         """Initialize a `Token` object."""
 
@@ -184,24 +184,14 @@ class Token:
 class Tokenizer(SymbolParser):
     """Parses a stream of bytes into tokens."""
 
-    file: bytes | None
-
-    def __init__(self, data: bytes | str | io.TextIOWrapper):
-        self.file = None
-        if isinstance(data, io.TextIOWrapper):
-            self.file = data.name.encode()
-            data = data.read()
-        super().__init__(data)
-
     def next(self) -> Token:
         """Parse next `Token`."""
 
-        lineno, column, symbol = super().next()
-        return Token(symbol, lineno, column, self.file)
+        return Token(*super().next(), self.file)
 
 
 if __name__ == "__main__":
-    with open("grammar/control.vxn") as fd:
+    with open("grammar/control.vxn", "rb") as fd:
         tk = Tokenizer(fd)
         while not tk.end():
             print(tk.next())
