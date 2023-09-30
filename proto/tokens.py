@@ -124,6 +124,14 @@ class TokenType(tuple[int, bytes], enum.ReprEnum):
     PuncRParen     = auto_token(b")", parent=Punc)
     PuncTerminator = auto_token(b";", parent=Punc)
 
+    Str            = auto_token(b"<string>")
+    StrSingleBkt   = auto_token(b"`%`", parent=Str)
+    StrSingleDbl   = auto_token(b"\"%\"", parent=Str)
+    StrSingleSgl   = auto_token(b"'%'", parent=Str)
+    StrTripleBkt   = auto_token(b"```%```", parent=Str)
+    StrTripleDbl   = auto_token(b"\"\"\"%\"\"\"", parent=Str)
+    StrTripleSgl   = auto_token(b"'''%'''", parent=Str)
+
     CTRLChar       = auto_token(b"<ctrl_character>")
     CTRLCharEOF    = auto_token(b"EOF", parent=CTRLChar)
     CTRLCharEOL    = auto_token(b"EOL", parent=CTRLChar)
@@ -174,6 +182,11 @@ class Token:
             f"{self.type_.name}{self.__class__.__name__}"
             f"[{self.symbol.decode()!r}]"
             f"@{location}")
+
+    def get_type(self):
+        """Get the token type."""
+
+        return self.type_
 
     def set_type(self, type_: TokenType):
         """Set the token type."""
