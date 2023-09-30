@@ -3,7 +3,11 @@ import io
 import typing
 
 from .symbols import Symbol, Column, Lineno, SymbolParser
-from .symbols import symbol_ispunc, symbol_isname, symbol_isnumeric
+from .symbols import (
+    symbol_ispunc,
+    symbol_isname,
+    symbol_isnumeric,
+    symbol_isstring)
 
 TTErrorMapping:    typing.Mapping[bytes, int] = {}
 TTKwdMapping:      typing.Mapping[bytes, int] = {}
@@ -11,6 +15,7 @@ TTNameMapping:     typing.Mapping[bytes, int] = {}
 TTNumericsMapping: typing.Mapping[bytes, int] = {}
 TTOperMapping:     typing.Mapping[bytes, int] = {}
 TTPuncMapping:     typing.Mapping[bytes, int] = {}
+TTStringsMapping:  typing.Mapping[bytes, int] = {}
 TTCTRLMapping:     typing.Mapping[bytes, int] = {}
 
 
@@ -32,6 +37,8 @@ def auto_token(symbol: bytes, *, parent: tuple[int, bytes] | None = None): #type
             TTOperMapping[symbol] = pair[0]
         elif parent[1] == b"<punctuation>":
             TTPuncMapping[symbol] = pair[0]
+        elif parent[1] == b"<string>":
+            TTStringsMapping[symbol] = pair[0]
         elif parent[1] == b"<ctrl_character>":
             TTCTRLMapping[symbol] = pair[0]
 
@@ -159,6 +166,8 @@ class Token:
 
         if symbol_isnumeric(symbol):
             self.set_type(TokenType.Num)
+        elif symbol_isstring(symbol):
+            self.set_type(TokenType.Str)
         elif symbol_ispunc(symbol):
             self.set_type(TokenType.Punc)
         elif symbol_isname(symbol):
