@@ -387,6 +387,18 @@ def symbol_ispunc(symbol: bytearray):
         and symbol[-1] not in NAME_CHARS)
 
 
+def symbol_isstring(symbol: bytearray):
+    for str_symbol in STR_SYMBOLS:
+        if str_symbol not in symbol:
+            continue
+        if str_symbol not in symbol[len(str_symbol):]:
+            continue
+        if str_symbol not in symbol[:len(str_symbol)]:
+            continue
+        return True
+    return False
+
+
 def symbol_isstrsym(symbol: bytearray):
     return bool(symbol and symbol in STR_SYMBOLS)
 
@@ -447,10 +459,9 @@ def main():
     ]
 
     with open("grammar/parse_test.vxn", "rb") as fd:
-        reader = SymbolParser(fd.read())
-
-    while not reader.end():
-        symbols_parsed.append(reader.next())
+        reader = SymbolParser(fd)
+        while not reader.end():
+            symbols_parsed.append(reader.next())
 
     for st, sp in zip(symbols_tested, symbols_parsed):
         print(st, sp, sep="  \t\t")
