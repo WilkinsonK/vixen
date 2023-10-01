@@ -190,7 +190,6 @@ class Lexer(BasicSymbolParser):
         return Token(*super().next(), self.file)
 
 
-
 def tokens_find_errunk(_: Symbol):
     """
     Dummy function which always returns
