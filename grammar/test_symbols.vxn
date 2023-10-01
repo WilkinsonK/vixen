@@ -3,7 +3,8 @@
 # determine the health and performance of token
 # parsing.
 sx: int = 0;# test comment
-c: str = '''d%'-'`''';
+cx: str = '''d%'-'`''';
+kv: str = "{interpol} this";
 x++; s: flt = 49.9.3; # A test comment.
 
 # Another test comment.
