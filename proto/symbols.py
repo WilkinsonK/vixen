@@ -12,6 +12,7 @@ digestable by some other process. Lexical analysis or AST parsing for
 example.
 """
 
+import abc
 import io
 import os
 import string
@@ -49,18 +50,22 @@ class SymbolParser(typing.Protocol[T_co]):
     usable for token parsing.
     """
 
+    @abc.abstractmethod
     def __iter__(self) -> typing.Generator[T_co, None, None]:
         pass
 
+    @abc.abstractmethod
     def end(self) -> bool:
         """
         Read head is at the end of data stream or
         not.
         """
 
+    @abc.abstractmethod
     def head(self) -> int:
         """Character at read head."""
 
+    @abc.abstractmethod
     def next(self) -> T_co:
         """Parse next symbol."""
 
@@ -104,7 +109,7 @@ class BasicSymbolParser(SymbolParser[tuple[Lineno, Column, Symbol]]):
         """Move the read head forward."""
 
         if char_isnewline(self.head()):
-            self.dimension_line += 1
+            self.dimension_line += 1 #type: ignore
             self.last_line_at = self.read_head
 
         self.read_head += 1
@@ -480,7 +485,7 @@ def main():
     ]
 
     with open("grammar/parse_test.vxn", "rb") as fd:
-        for symbol in SymbolParser(fd):
+        for symbol in BasicSymbolParser(fd):
             symbols_parsed.append(symbol)
 
     for st, sp in zip(symbols_tested, symbols_parsed):

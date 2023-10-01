@@ -131,14 +131,14 @@ class TokenType(int, enum.ReprEnum):
 class Token:
     symbol: Symbol
     ttype:  TokenType
-    lineno: Lineno
-    column: Column
+    lineno: Lineno #type: ignore
+    column: Column #type: ignore
     file:   bytes | None
 
     def __init__(
         self,
-        lineno: Lineno,
-        column: Column,
+        lineno: Lineno, #type: ignore
+        column: Column, #type: ignore
         symbol: Symbol,
         file: bytes | None = None):
         """Initialize a `Token` object."""
@@ -182,7 +182,7 @@ class Lexer(BasicSymbolParser):
 
     # Technically needed only for type analysis.
     def __iter__(self) -> typing.Generator[Token, None, None]:
-        return super().__iter__()
+        return super().__iter__() #type: ignore
 
     def next(self):
         """Parse next `Token`."""
