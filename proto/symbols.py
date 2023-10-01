@@ -41,6 +41,7 @@ STR_SYMBOLS = (
     bytearray(b"`"),
     bytearray(b"`"*3)
 )
+STRUCTURE_CHARS = b"])}{(["
 TERM_CHARS = b";"
 WHITESPACE = string.whitespace.encode()
 
@@ -81,9 +82,9 @@ class BasicSymbolParser(SymbolParser[T]):
     dimension_line:   int
     file:             bytes | None
     last_line_at:     int
-    last_symbol:      bytearray
     read_head:        int
     string_parsing:   bool
+    symbol_history:   tuple[bytearray, bytearray, bytearray]
 
     def __iter__(self):
         while not self.end():
@@ -94,9 +95,9 @@ class BasicSymbolParser(SymbolParser[T]):
         self.dimension_line = 1 #type: ignore[assignment]
         self.file = None
         self.last_line_at = 0
-        self.last_symbol = bytearray()
         self.read_head = 0
         self.string_parsing = False
+        self.symbol_history = (bytearray(), bytearray(), bytearray())
 
         if isinstance(data, str):
             self.data = data.encode()
@@ -105,6 +106,10 @@ class BasicSymbolParser(SymbolParser[T]):
             self.data = data.read()
         else:
             self.data = data
+
+    @property
+    def last_symbol(self):
+        return self.symbol_history[-1]
 
     def advance(self):
         """Move the read head forward."""
@@ -196,7 +201,9 @@ class BasicSymbolParser(SymbolParser[T]):
             return self.lineno(), 0, symbol
 
         # Determine what we are most likely parsing.
-        if char_isnamechar(self.head()) and not char_isdigitchar(self.head()):
+        if self.string_parsing:
+            nexter = self.next_punc
+        elif char_isnamechar(self.head()) and not char_isdigitchar(self.head()):
             nexter = self.next_name
         elif char_isdigitchar(self.head()):
             nexter = self.next_numeric
@@ -204,7 +211,7 @@ class BasicSymbolParser(SymbolParser[T]):
             nexter = self.next_punc
 
         token = nexter()
-        self.last_symbol = token[2]
+        self.symbol_history = (*self.symbol_history[-2:], token[2])
 
         return token
 
@@ -268,11 +275,9 @@ class BasicSymbolParser(SymbolParser[T]):
                     break
                 if char_iscomment(self.head()):
                     break
-                if symbol_isclosedb(symbol, self.head()):
+                if symbol in STRUCTURE_CHARS:
                     break
-                if symbol_isclosedp(symbol, self.head()):
-                    break
-                if symbol_iscloseds(symbol, self.head()):
+                if self.head() in STRUCTURE_CHARS:
                     break
                 if char_istermchar(self.head()):
                     break
@@ -280,8 +285,18 @@ class BasicSymbolParser(SymbolParser[T]):
                 if not symbol_isvalidpunc(symbol, self.head()):
                     break
 
-            if symbol_isstrsym(symbol):
-                self.string_parsing = not self.string_parsing
+            # If future char sequence is the same
+            # as the opening string sequence.
+            elif self.lookahead_matchlast():
+                break
+
+            # If the symbol matches the opening
+            # string sequence.
+            elif self.symbol_history[1] == symbol:
+                break
+
+        if symbol_isstrsym(symbol):
+            self.string_parsing = not self.string_parsing
 
         return self.lineno(), column, symbol
 
@@ -319,18 +334,6 @@ def char_isdigitsep(char: bytes | int):
     return char in DIGIT_SEP_CHARS
 
 
-def char_islbrace(char: bytes | int):
-    return char in b"{"
-
-
-def char_islparen(char: bytes | int):
-    return char in b"("
-
-
-def char_islsqbrk(char: bytes | int):
-    return char in b"["
-
-
 def char_isnamechar(char: bytes | int):
     return char in NAME_CHARS
 
@@ -347,41 +350,12 @@ def char_ispuncchar(char: bytes | int):
     return char not in NAME_CHARS
 
 
-def char_isrbrace(char: bytes | int):
-    return char in b"}"
-
-
-def char_isrparen(char: bytes | int):
-    return char in b")"
-
-
-def char_isrsqbrk(char: bytes | int):
-    return char in b"]"
-
-
 def char_istermchar(char: bytes | int):
     return any([char == tc for tc in TERM_CHARS])
 
 
-def symbol_isclosedb(symbol: bytearray, next_char: bytes | int):
-    return bool(
-        symbol
-        and char_islbrace(symbol[0])
-        and char_isrbrace(next_char))
-
-
-def symbol_isclosedp(symbol: bytearray, next_char: bytes | int):
-    return bool(
-        symbol
-        and char_islparen(symbol[0])
-        and char_isrparen(next_char))
-
-
-def symbol_iscloseds(symbol: bytearray, next_char: bytes | int):
-    return bool(
-        symbol
-        and char_islsqbrk(symbol[0])
-        and char_isrsqbrk(next_char))
+def char_isstructchar(char: bytes | int):
+    return char in STRUCTURE_CHARS
 
 
 def symbol_isname(symbol: bytearray):
@@ -412,18 +386,6 @@ def symbol_ispunc(symbol: bytearray):
         symbol
         and symbol[0] not in NAME_CHARS
         and symbol[-1] not in NAME_CHARS)
-
-
-def symbol_isstring(symbol: bytearray):
-    for str_symbol in STR_SYMBOLS:
-        if str_symbol not in symbol:
-            continue
-        if str_symbol not in symbol[len(str_symbol):]:
-            continue
-        if str_symbol not in symbol[:len(str_symbol)]:
-            continue
-        return True
-    return False
 
 
 def symbol_isstrsym(symbol: bytearray):
@@ -469,7 +431,9 @@ def main():
         (6, 2, bytearray(b':')),
         (6, 4, bytearray(b'str')),
         (6, 8, bytearray(b'=')),
-        (6, 10, bytearray(b"\'\'\'d%\'-\'`\'\'\'")),
+        (6, 10, bytearray(b"\'\'\'")),
+        (6, 13, bytearray(b"d%\'-\'`")),
+        (6, 19, bytearray(b"\'\'\'")),
         (6, 22, bytearray(b';')),
         (7, 1, bytearray(b'x')),
         (7, 2, bytearray(b'++')),
@@ -485,7 +449,7 @@ def main():
         (10, 0, bytearray(b'EOF'))
     ]
 
-    with open("grammar/parse_test.vxn", "rb") as fd:
+    with open("grammar/test_symbols.vxn", "rb") as fd:
         for symbol in BasicSymbolParser(fd):
             symbols_parsed.append(symbol)
 
