@@ -21,7 +21,7 @@ import enum
 import typing
 
 from .symbols import Symbol, Column, Lineno, BasicSymbolParser, SymbolParser
-from .symbols import symbol_isnumeric, symbol_isstring
+from .symbols import symbol_isnumeric
 
 TokenTypeMapping: typing.Mapping[bytes, int] = {}
 
@@ -49,6 +49,7 @@ class TokenType(int, enum.ReprEnum):
     ErrorBadString = auto(b"<error:bad_string>")
 
     Kwd            = auto(b"<keyword>")
+    KwdAs          = auto(b"as")
     KwdBreak       = auto(b"break")
     KwdCatch       = auto(b"catch")
     KwdContinue    = auto(b"continue")
@@ -124,12 +125,13 @@ class TokenType(int, enum.ReprEnum):
     PuncTerminator = auto(b";")
 
     Str            = auto(b"<string>")
-    StrSingleBkt   = auto(b"`%`")
-    StrSingleDbl   = auto(b"\"%\"")
-    StrSingleSgl   = auto(b"'%'")
-    StrTripleBkt   = auto(b"```%```")
-    StrTripleDbl   = auto(b"\"\"\"%\"\"\"")
-    StrTripleSgl   = auto(b"'''%'''")
+    StrSingleBkt   = auto(b"`")
+    StrSingleDbl   = auto(b"\"")
+    StrSingleSgl   = auto(b"'")
+    StrTripleBkt   = auto(b"```")
+    StrTripleDbl   = auto(b"\"\"\"")
+    StrTripleSgl   = auto(b"'''")
+    StrExpression  = auto(b"<string:expression>")
 
     CTRLChar       = auto(b"<ctrl_character>")
     CTRLCharEOF    = auto(b"EOF")
@@ -158,8 +160,6 @@ class Token:
 
         if symbol_isnumeric(symbol):
             type_finder = tokens_find_numtype
-        elif symbol_isstring(symbol):
-            type_finder = tokens_find_strtype
         else:
             type_finder = tokens_find_gentype
 
@@ -196,10 +196,10 @@ class BasicLexer(BasicSymbolParser[Token]):
         while not self.end():
             yield self.next()
 
-    def next(self):
+    def next(self) -> Token:
         """Parse next `Token`."""
 
-        return Token(*super().next(), self.file)
+        return Token(*super().next(), self.file) #type: ignore[call-arg]
 
 
 def tokens_find_errunk(_: Symbol):
