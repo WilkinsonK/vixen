@@ -53,6 +53,10 @@ class SymbolParser:
     read_head:        int
     string_parsing:   bool
 
+    def __iter__(self):
+        while not self.end():
+            yield self.next()
+
     def __init__(self, data: bytes | str | io.BufferedReader):
 
         self.dimension_line = 1
@@ -459,9 +463,8 @@ def main():
     ]
 
     with open("grammar/parse_test.vxn", "rb") as fd:
-        reader = SymbolParser(fd)
-        while not reader.end():
-            symbols_parsed.append(reader.next())
+        for symbol in SymbolParser(fd):
+            symbols_parsed.append(symbol)
 
     for st, sp in zip(symbols_tested, symbols_parsed):
         print(st, sp, sep="  \t\t")
