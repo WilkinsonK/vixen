@@ -53,7 +53,7 @@ class TokenType(int, enum.ReprEnum):
     # series of numerical characters`. This means
     # that we can expect an integer-like sequence
     # in the token at that position.
-    NameOfTypeInt  = auto(br"int%")
+    NameOfTypeInt  = auto(b"int")
     NameOfTypeChar = auto(b"char")
     NameOfTypeStr  = auto(b"str")
     NameOfTypeFlt  = auto(b"flt")
@@ -68,8 +68,6 @@ class TokenType(int, enum.ReprEnum):
     NumOct         = auto(br"0o%")
 
     Oper           = auto(b"<operation>")
-    OperAdd        = auto(b"+")
-    OperAddEq      = auto(b"+=")
     OperAddressOf  = auto(b"&")
     OperAssign     = auto(b"=")
     OperBtAnd      = auto(b"&")
@@ -79,7 +77,6 @@ class TokenType(int, enum.ReprEnum):
     OperDelete     = auto(b"~")
     OperDivide     = auto(b"/")
     OperDivFloor   = auto(b"//")
-    OperDot        = auto(b".")
     OperIncrement  = auto(b"++")
     OperLgAnd      = auto(b"&&")
     OperLgNot      = auto(b"!")
@@ -88,16 +85,18 @@ class TokenType(int, enum.ReprEnum):
     OperLgGte      = auto(b">=")
     OperLgLt       = auto(b"<")
     OperLgLte      = auto(b"<=")
-    OperPointer    = auto(b"*")
+    OperMinus      = auto(b"-")
+    OperMinusEq    = auto(b"-=")
+    OperModulus    = auto(br"%")
+    OperPlus       = auto(b"+")
+    OperPlusEq     = auto(b"+=")
     OperPower      = auto(b"**")
-    OperRemainder  = auto(br"%%")
-    OperMultiply   = auto(b"*")
     OperStamp      = auto(b"@")
-    OperSubtract   = auto(b"-")
-    OperSubtractEq = auto(b"-=")
+    OperStar       = auto(b"*")
 
     Punc           = auto(b"<punctuation>")
     PuncColon      = auto(b":")
+    PuncDot        = auto(b".")
     PuncLBrace     = auto(b"{")
     PuncLBracket   = auto(b"[")
     PuncLParen     = auto(b"(")
@@ -192,7 +191,7 @@ def tokens_find_strtype(symbol: Symbol):
 
 class Token:
     symbol: Symbol
-    type_:  TokenType
+    ttype:  TokenType
     lineno: Lineno
     column: Column
     file:   bytes | None
@@ -217,13 +216,12 @@ class Token:
         else:
             type_finder = tokens_find_gentype
 
-        self.set_type(type_finder(symbol))
+        self.ttype = type_finder(symbol)
 
     def __str__(self):
         return self.symbol.decode()
 
     def __repr__(self):
-
         if self.file:
             location = (
                 f"("
@@ -235,19 +233,9 @@ class Token:
             location = f"(lineno: {self.lineno}, col: {self.column})"
 
         return (
-            f"{self.get_type().name}"
+            f"{self.ttype.name}"
             f"[{self.symbol.decode()!r}]"
             f"@{location}")
-
-    def get_type(self):
-        """Get the token type."""
-
-        return self.type_
-
-    def set_type(self, type_: TokenType):
-        """Set the token type."""
-
-        self.type_ = type_
 
 
 class Tokenizer(SymbolParser):
