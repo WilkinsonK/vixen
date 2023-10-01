@@ -7,7 +7,10 @@ Author: Keenan W. Wilkinson
 Date: 1 Oct 2023
 ---
 
-Provides tools for general purpose lexical analysis where tokens
+Provides tools for general purpose lexical analysis where tokens are
+parsed first by rules most common to the majority of programming
+language structures, and then categorized into `TokenType`s with
+additional metadata.
 """
 import enum
 import typing
