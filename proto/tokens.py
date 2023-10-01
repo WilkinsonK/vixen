@@ -55,18 +55,6 @@ class TokenType(int, enum.ReprEnum):
 
     Name           = auto(b"<name>")
     NameGeneric    = auto(b"<name:generic>")
-    NameOfType     = auto(b"<name:type>")
-
-    # '%' is being used to express `a consecutive
-    # series of numerical characters`. This means
-    # that we can expect an integer-like sequence
-    # in the token at that position.
-    NameOfTypeInt  = auto(b"int")
-    NameOfTypeChar = auto(b"char")
-    NameOfTypeStr  = auto(b"str")
-    NameOfTypeFlt  = auto(b"flt")
-    NameOfTypeDbl  = auto(b"dbl")
-    NameOfVar      = auto(b"<name:variable>")
 
     Num            = auto(b"<numeric>")
     NumBin         = auto(br"0b%")
