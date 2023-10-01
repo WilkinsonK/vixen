@@ -1,9 +1,0 @@
-# This file contains garbage and does not reflect
-# the nature of Vixen. However, it is used to
-# determine the health and performance of token
-# parsing.
-sx: int = 0;# test comment
-c: str = '''d%'-'`''';
-x++; s: flt = 49.9.3; # A test comment.
-
-# Another test comment.
