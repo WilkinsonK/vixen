@@ -11,7 +11,12 @@ Provides tools for general purpose lexical analysis where tokens are
 parsed first by rules most common to the majority of programming
 language structures, and then categorized into `TokenType`s with
 additional metadata.
+
+The reasoning behind this module is to ease the responsibility of
+parse-time tasks where it should make identifying components of
+complex structures simpler, quicker, with pre-categorized elements.
 """
+
 import enum
 import typing
 
