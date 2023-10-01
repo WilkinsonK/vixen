@@ -20,6 +20,7 @@ import typing
 
 T = typing.TypeVar("T")
 T_co = typing.TypeVar("T_co", covariant=True)
+T_ct = typing.TypeVar("T_ct", contravariant=True)
 Column = typing.TypeVar("Column", bound=int)
 Lineno = typing.TypeVar("Lineno", bound=int)
 Symbol = bytearray
@@ -70,14 +71,14 @@ class SymbolParser(typing.Protocol[T_co]):
         """Parse next symbol."""
 
 
-class BasicSymbolParser(SymbolParser[tuple[Lineno, Column, Symbol]]):
+class BasicSymbolParser(SymbolParser[T]):
     """
     Parses generic symbols into a tuple of
     `(line_number, start_column, symbol)`.
     """
 
     data:             bytes
-    dimension_line:   Lineno
+    dimension_line:   int
     file:             bytes | None
     last_line_at:     int
     last_symbol:      bytearray

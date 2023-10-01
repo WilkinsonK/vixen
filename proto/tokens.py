@@ -20,7 +20,7 @@ complex structures simpler, quicker, with pre-categorized elements.
 import enum
 import typing
 
-from .symbols import Symbol, Column, Lineno, BasicSymbolParser
+from .symbols import Symbol, Column, Lineno, BasicSymbolParser, SymbolParser
 from .symbols import symbol_isnumeric, symbol_isstring
 
 TokenTypeMapping: typing.Mapping[bytes, int] = {}
@@ -185,12 +185,16 @@ class Token:
             f"@{location}")
 
 
-class Lexer(BasicSymbolParser):
+class Lexer(SymbolParser[Token]):
     """Parses a stream of bytes into tokens."""
+
+
+class BasicLexer(BasicSymbolParser[Token]):
 
     # Technically needed only for type analysis.
     def __iter__(self) -> typing.Generator[Token, None, None]:
-        return super().__iter__() #type: ignore
+        while not self.end():
+            yield self.next()
 
     def next(self):
         """Parse next `Token`."""
@@ -271,5 +275,5 @@ def tokens_find_strtype(symbol: Symbol):
 
 if __name__ == "__main__":
     with open("grammar/control.vxn", "rb") as fd:
-        for tk in Lexer(fd):
+        for tk in BasicLexer(fd):
             print(repr(tk))
