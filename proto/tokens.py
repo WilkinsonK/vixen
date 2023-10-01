@@ -4,7 +4,6 @@ import typing
 from .symbols import Symbol, Column, Lineno, SymbolParser
 from .symbols import symbol_isnumeric, symbol_isstring
 
-TokenType = typing.TypeVar("TokenType")
 TokenTypeMapping: typing.Mapping[bytes, int] = {}
 
 
@@ -28,25 +27,34 @@ class TokenType(int, enum.ReprEnum):
 
     Error          = auto(b"<error>")
     ErrorUnknown   = auto(b"<error:unknown>")
+    ErrorBadString = auto(b"<error:bad_string>")
 
     Kwd            = auto(b"<keyword>")
     KwdBreak       = auto(b"break")
+    KwdCatch       = auto(b"catch")
     KwdContinue    = auto(b"continue")
+    KwdConstant    = auto(b"const")
     KwdClass       = auto(b"class")
     KwdDelete      = auto(b"delete")
     KwdElse        = auto(b"else")
     KwdFor         = auto(b"for")
+    KwdFrom        = auto(b"from")
+    KwdFunc        = auto(b"func")
     KwdIf          = auto(b"if")
     KwdImport      = auto(b"import")
+    KwdInclude     = auto(b"include")
     KwdNew         = auto(b"new")
     KwdPanic       = auto(b"panic")
     KwdProto       = auto(b"proto")
     KwdRaise       = auto(b"raise")
     KwdReturn      = auto(b"return")
+    KwdStatic      = auto(b"static")
+    KwdTry         = auto(b"try")
     KwdWhile       = auto(b"while")
     KwdWith        = auto(b"with")
 
     Name           = auto(b"<name>")
+    NameGeneric    = auto(b"<name:generic>")
     NameOfType     = auto(b"<name:type>")
 
     # '%' is being used to express `a consecutive
@@ -69,6 +77,7 @@ class TokenType(int, enum.ReprEnum):
 
     Oper           = auto(b"<operation>")
     OperAddressOf  = auto(b"&")
+    OperAsk        = auto(b"?")
     OperAssign     = auto(b"=")
     OperBtAnd      = auto(b"&")
     OperBtOr       = auto(b"|")
@@ -96,6 +105,7 @@ class TokenType(int, enum.ReprEnum):
 
     Punc           = auto(b"<punctuation>")
     PuncColon      = auto(b":")
+    PuncComma      = auto(b",")
     PuncDot        = auto(b".")
     PuncLBrace     = auto(b"{")
     PuncLBracket   = auto(b"[")
@@ -136,7 +146,7 @@ def tokens_find_gentype(symbol: Symbol):
     try:
         key = TokenTypeMapping[bytes(symbol)]
     except:
-        return TokenType.Name
+        return TokenType.NameGeneric
 
     # Key is `enum.auto` type, not int.
     return TokenType(key.value) #type: ignore
@@ -186,7 +196,7 @@ def tokens_find_strtype(symbol: Symbol):
     if sample == b"'''":
         return TokenType.StrTripleSgl
 
-    return TokenType.ErrorUnknown
+    return TokenType.ErrorBadString
 
 
 class Token:
