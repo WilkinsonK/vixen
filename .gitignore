@@ -1,4 +1,5 @@
-.vscode
+.vscode/
+.venv/
 builddir/
 build/
 __pycache__/
