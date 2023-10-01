@@ -1,19 +1,30 @@
+#!/bin/python3
+"""
+tokens.py
+---
+
+Author: Keenan W. Wilkinson
+Date: 1 Oct 2023
+---
+
+Provides tools for general purpose lexical analysis where tokens
+"""
 import enum
 import typing
 
-from .symbols import Symbol, Column, Lineno, SymbolParser
+from .symbols import Symbol, Column, Lineno, BasicSymbolParser
 from .symbols import symbol_isnumeric, symbol_isstring
 
 TokenTypeMapping: typing.Mapping[bytes, int] = {}
 
 
-def auto(symbol: bytes): #type: ignore
+def auto(symbol: bytes):
     """
     Maps token IDs to their respective symbol.
     """
 
     value = enum.auto()
-    TokenTypeMapping[symbol] = value
+    TokenTypeMapping[symbol] = value #type: ignore[index]
 
     return value
 
@@ -117,7 +128,70 @@ class TokenType(int, enum.ReprEnum):
     CTRLCharEOL    = auto(b"EOL")
 
 
-def tokens_find_errunk(symbol: Symbol):
+class Token:
+    symbol: Symbol
+    ttype:  TokenType
+    lineno: Lineno
+    column: Column
+    file:   bytes | None
+
+    def __init__(
+        self,
+        lineno: Lineno,
+        column: Column,
+        symbol: Symbol,
+        file: bytes | None = None):
+        """Initialize a `Token` object."""
+
+        self.symbol = symbol
+        self.lineno = lineno
+        self.column = column
+        self.file   = file
+
+        if symbol_isnumeric(symbol):
+            type_finder = tokens_find_numtype
+        elif symbol_isstring(symbol):
+            type_finder = tokens_find_strtype
+        else:
+            type_finder = tokens_find_gentype
+
+        self.ttype = type_finder(symbol)
+
+    def __str__(self):
+        return self.symbol.decode()
+
+    def __repr__(self):
+        if self.file:
+            location = (
+                f"("
+                    f"lineno: {self.lineno}, "
+                    f"col: {self.column}, "
+                    f"file: {self.file.decode()!r}"
+                f")")
+        else:
+            location = f"(lineno: {self.lineno}, col: {self.column})"
+
+        return (
+            f"{self.ttype.name}"
+            f"[{self.symbol.decode()!r}]"
+            f"@{location}")
+
+
+class Lexer(BasicSymbolParser):
+    """Parses a stream of bytes into tokens."""
+
+    # Technically needed only for type analysis.
+    def __iter__(self) -> typing.Generator[Token, None, None]:
+        return super().__iter__()
+
+    def next(self):
+        """Parse next `Token`."""
+
+        return Token(*super().next(), self.file)
+
+
+
+def tokens_find_errunk(_: Symbol):
     """
     Dummy function which always returns
     `TokenType.ErrorUnknown`.
@@ -188,65 +262,7 @@ def tokens_find_strtype(symbol: Symbol):
     return TokenType.ErrorBadString
 
 
-class Token:
-    symbol: Symbol
-    ttype:  TokenType
-    lineno: Lineno
-    column: Column
-    file:   bytes | None
-
-    def __init__(
-        self,
-        lineno: Lineno,
-        column: Column,
-        symbol: Symbol,
-        file: bytes | None = None):
-        """Initialize a `Token` object."""
-
-        self.symbol = symbol
-        self.lineno = lineno
-        self.column = column
-        self.file   = file
-
-        if symbol_isnumeric(symbol):
-            type_finder = tokens_find_numtype
-        elif symbol_isstring(symbol):
-            type_finder = tokens_find_strtype
-        else:
-            type_finder = tokens_find_gentype
-
-        self.ttype = type_finder(symbol)
-
-    def __str__(self):
-        return self.symbol.decode()
-
-    def __repr__(self):
-        if self.file:
-            location = (
-                f"("
-                    f"lineno: {self.lineno}, "
-                    f"col: {self.column}, "
-                    f"file: {self.file.decode()!r}"
-                f")")
-        else:
-            location = f"(lineno: {self.lineno}, col: {self.column})"
-
-        return (
-            f"{self.ttype.name}"
-            f"[{self.symbol.decode()!r}]"
-            f"@{location}")
-
-
-class Tokenizer(SymbolParser):
-    """Parses a stream of bytes into tokens."""
-
-    def next(self) -> Token:
-        """Parse next `Token`."""
-
-        return Token(*super().next(), self.file)
-
-
 if __name__ == "__main__":
     with open("grammar/control.vxn", "rb") as fd:
-        for tk in Tokenizer(fd):
+        for tk in Lexer(fd):
             print(repr(tk))

@@ -15,8 +15,12 @@ example.
 import io
 import os
 import string
+import typing
 
-Column = Lineno = int
+T = typing.TypeVar("T")
+T_co = typing.TypeVar("T_co", covariant=True)
+Column = typing.TypeVar("Column", bound=int)
+Lineno = typing.TypeVar("Lineno", bound=int)
 Symbol = bytearray
 
 COMMENT_CHAR = b"#"
@@ -39,14 +43,36 @@ TERM_CHARS = b";"
 WHITESPACE = string.whitespace.encode()
 
 
-class SymbolParser:
+class SymbolParser(typing.Protocol[T_co]):
     """
     Parses a buffer of data into symbols that are
     usable for token parsing.
     """
 
+    def __iter__(self) -> typing.Generator[T_co, None, None]:
+        pass
+
+    def end(self) -> bool:
+        """
+        Read head is at the end of data stream or
+        not.
+        """
+
+    def head(self) -> int:
+        """Character at read head."""
+
+    def next(self) -> T_co:
+        """Parse next symbol."""
+
+
+class BasicSymbolParser(SymbolParser[tuple[Lineno, Column, Symbol]]):
+    """
+    Parses generic symbols into a tuple of
+    `(line_number, start_column, symbol)`.
+    """
+
     data:             bytes
-    dimension_line:   int
+    dimension_line:   Lineno
     file:             bytes | None
     last_line_at:     int
     last_symbol:      bytearray
@@ -59,7 +85,7 @@ class SymbolParser:
 
     def __init__(self, data: bytes | str | io.BufferedReader):
 
-        self.dimension_line = 1
+        self.dimension_line = 1 #type: ignore[assignment]
         self.file = None
         self.last_line_at = 0
         self.last_symbol = bytearray()
@@ -116,16 +142,9 @@ class SymbolParser:
             self.advance_whitespace()
 
     def end(self):
-        """
-        Read head is at the end of data stream or
-        not.
-        """
-
         return self.read_head >= len(self.data)
 
     def head(self):
-        """Character at read head."""
-
         # Fixes a bug where iterating to `the end`
         # does not always return the last symbol.
         # In particular, when the final symbol is
@@ -155,9 +174,7 @@ class SymbolParser:
 
         return self.lookahead(len(self.last_symbol)) == self.last_symbol
 
-    def next(self) -> tuple[Lineno, Column, Symbol]:
-        """Parse next symbol."""
-
+    def next(self):
         # Advance past all whitespace and chars
         # considered invalid for parsing.
         # This includes characters after a comment
@@ -185,7 +202,7 @@ class SymbolParser:
 
         return token
 
-    def next_name(self) -> tuple[Lineno, Column, Symbol]:
+    def next_name(self):
         """Parse next name symbol."""
 
         symbol = bytearray()
@@ -209,7 +226,7 @@ class SymbolParser:
 
         return self.lineno(), column, symbol
 
-    def next_numeric(self) -> tuple[Lineno, Column, Symbol]:
+    def next_numeric(self):
         """Parse next numeric symbol."""
 
         symbol = bytearray()
@@ -230,7 +247,7 @@ class SymbolParser:
 
         return self.lineno(), column, symbol
 
-    def next_punc(self) -> tuple[Lineno, Column, Symbol]:
+    def next_punc(self):
         """Parse next punctuation symbol."""
 
         symbol = bytearray()
@@ -262,7 +279,7 @@ class SymbolParser:
 
         return self.lineno(), column, symbol
 
-    def next_string(self) -> tuple[Lineno, Column, Symbol]:
+    def next_string(self):
         """Parse the next string symbol."""
 
         symbol = bytearray()
