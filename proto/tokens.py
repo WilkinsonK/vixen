@@ -88,6 +88,7 @@ class TokenType(int, enum.ReprEnum):
     OperPlus       = auto(b"+")
     OperPlusEq     = auto(b"+=")
     OperPower      = auto(b"**")
+    OperPtrAttr    = auto(b"->")
     OperStamp      = auto(b"@")
     OperStar       = auto(b"*")
 
