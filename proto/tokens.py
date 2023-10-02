@@ -64,6 +64,8 @@ class TokenType(int, enum.ReprEnum):
     KwdImport      = auto(b"import")
     KwdInclude     = auto(b"include")
     KwdNew         = auto(b"new")
+    KwdNil         = auto(b"nil")
+    KwdNull        = auto(b"null")
     KwdPanic       = auto(b"panic")
     KwdProto       = auto(b"proto")
     KwdRaise       = auto(b"raise")
