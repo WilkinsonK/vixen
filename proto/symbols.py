@@ -27,7 +27,15 @@ Symbol = bytearray
 
 COMMENT_CHAR = b"#"
 DIGIT_CHARS = string.digits.encode()
-DIGIT_SEP_CHARS = b".xbo"
+# With digits extends digits to allow up to base
+# 91 (BasE91) numbers.
+DIGIT_CHARS_EXT = (
+    (string.ascii_letters + string.punctuation)
+    .replace(r"-", "")
+    .replace("\\", "")
+    .replace("'", "")).encode()
+DIGIT_CHARS_HEX = string.hexdigits.encode()
+DIGIT_SEP_CHARS = b".xdbo"
 END_OF_FILE = bytearray(b"EOF")
 END_OF_LINE = bytearray(b"EOL")
 NAME_CHARS = (string.ascii_letters + string.digits + "_").encode()
@@ -90,22 +98,36 @@ class BasicSymbolParser(SymbolParser[T]):
         while not self.end():
             yield self.next()
 
-    def __init__(self, data: bytes | str | io.BufferedReader):
+    def __init__(
+        self,
+        data: bytes | str | io.BufferedReader | None = None,
+        *,
+        file: bytes | str | None = None):
 
         self.dimension_line = 1 #type: ignore[assignment]
-        self.file = None
         self.last_line_at = 0
         self.read_head = 0
         self.string_parsing = False
         self.symbol_history = (bytearray(), bytearray(), bytearray())
+
+        if not data and not file:
+            raise ValueError("No data, stream or file path provided.")
+
+        if isinstance(file, str):
+            self.file = file.encode()
+        else:
+            self.file = file
 
         if isinstance(data, str):
             self.data = data.encode()
         elif isinstance(data, io.BufferedReader):
             self.file = data.name.encode()
             self.data = data.read()
+        elif self.file:
+            with open(self.file, "rb") as fd:
+                self.data = fd.read()
         else:
-            self.data = data
+            self.data = data or b""
 
     @property
     def last_symbol(self):
@@ -207,6 +229,8 @@ class BasicSymbolParser(SymbolParser[T]):
             nexter = self.next_name
         elif char_isdigitchar(self.head()):
             nexter = self.next_numeric
+        elif char_isdigitsep(self.head()) and char_isdigitchar(self.lookahead(2)[1]):
+            nexter = self.next_numeric
         else:
             nexter = self.next_punc
 
@@ -237,6 +261,9 @@ class BasicSymbolParser(SymbolParser[T]):
             if not symbol_isvalidname(symbol, self.head()):
                 break
 
+            if self.end():
+                break
+
         return self.lineno(), column, symbol
 
     def next_numeric(self):
@@ -258,6 +285,9 @@ class BasicSymbolParser(SymbolParser[T]):
             if not symbol_isvalidnum(symbol, self.head()):
                 break
 
+            if self.end():
+                break
+
         return self.lineno(), column, symbol
 
     def next_punc(self):
@@ -275,12 +305,14 @@ class BasicSymbolParser(SymbolParser[T]):
                     break
                 if char_iscomment(self.head()):
                     break
-                if symbol in STRUCTURE_CHARS:
-                    break
-                if self.head() in STRUCTURE_CHARS:
+                if char_isstructchar(self.head()):
                     break
                 if char_istermchar(self.head()):
                     break
+                # Gratuitious most likely.
+                if char_isstructchar(symbol):
+                    break
+
                 # Names cannot exist in punctuation.
                 if not symbol_isvalidpunc(symbol, self.head()):
                     break
@@ -293,6 +325,9 @@ class BasicSymbolParser(SymbolParser[T]):
             # If the symbol matches the opening
             # string sequence.
             elif self.symbol_history[1] == symbol:
+                break
+
+            if self.end():
                 break
 
         if symbol_isstrsym(symbol):
@@ -367,17 +402,34 @@ def symbol_isname(symbol: bytearray):
 
 
 def symbol_isnumeric(symbol: bytearray):
+    # Byte array might be numeric if  any chars
+    # in the sequence are digits.
     if not bool(symbol and any([i in DIGIT_CHARS for i in symbol])):
         return False
 
+    base_notation = 0
+    # Byte array is numeric if there is not mixing
+    # of floating point ('.') char and special
+    # base notations (0x, 0d, 0b, 0o).
     for ch in DIGIT_SEP_CHARS[1:]:
         if ch in symbol and b"." in symbol:
             return False
+        elif ch in symbol:
+            base_notation = ch
 
+    # Byte array is numeric if only digits are
+    # found in the sequence.
     for ch in symbol:
-        if ch not in DIGIT_CHARS + DIGIT_SEP_CHARS:
-            return False
+        # If parsing for base 10, binary or octal.
+        if base_notation in (0, 98, 111):
+            if ch not in DIGIT_CHARS + DIGIT_SEP_CHARS:
+                return False
+        # If parsing hex or some other base.
+        else:
+            if ch not in DIGIT_CHARS + DIGIT_CHARS_EXT:
+                return False
 
+        # If parsing for 
     return (symbol.count(b".") < 2)
 
 
@@ -404,14 +456,19 @@ def symbol_isvalidname(symbol: bytearray, next_char: bytes | int):
 
 
 def symbol_isvalidnum(symbol: bytearray, next_char: bytes | int):
-    isnumeric = symbol_isnumeric(symbol)
-    if not isnumeric:
+    if not symbol_isnumeric(symbol) and symbol != b".":
         return False
 
     if b"." in symbol:
-        return not char_isdigitsep(next_char)
+        return not char_ispuncchar(next_char)
+    elif char_isdigitchar(next_char):
+        return True
+    elif char_isdigitsep(next_char):
+        return True
+    elif not char_ispuncchar(next_char):
+        return True
 
-    return isnumeric
+    return False
 
 
 def symbol_isvalidpunc(symbol: bytearray, next_char: bytes | int):
@@ -451,8 +508,7 @@ def main():
         (8, 9, bytearray(b'flt')),
         (8, 13, bytearray(b'=')),
         (8, 15, bytearray(b'49.9')),
-        (8, 19, bytearray(b'.')),
-        (8, 20, bytearray(b'3')),
+        (8, 19, bytearray(b'.3')),
         (8, 21, bytearray(b';')),
         (11, 0, bytearray(b'EOF'))
     ]
