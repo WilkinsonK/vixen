@@ -55,6 +55,7 @@ class TokenType(int, enum.ReprEnum):
     KwdContinue    = auto(b"continue")
     KwdConstant    = auto(b"const")
     KwdClass       = auto(b"class")
+    KwdDefault     = auto(b"default")
     KwdDelete      = auto(b"delete")
     KwdElse        = auto(b"else")
     KwdFor         = auto(b"for")
