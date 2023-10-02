@@ -40,7 +40,7 @@ END_OF_FILE = bytearray(b"EOF")
 END_OF_LINE = bytearray(b"EOL")
 NAME_CHARS = (string.ascii_letters + string.digits + "_").encode()
 NEWLINE_CHAR = os.linesep.encode()
-STR_CHARS = b"'\""
+STR_CHARS = b"'`\""
 STR_SYMBOLS = (
     bytearray(b"\""),
     bytearray(b"\""*3),
@@ -317,6 +317,19 @@ class BasicSymbolParser(SymbolParser[T]):
                 if not symbol_isvalidpunc(symbol, self.head()):
                     break
 
+                # String parsing has most likely
+                # started. Valid string tokens
+                # must not contain non-string
+                # notation chars.
+                if symbol_isstrsym(symbol) and not char_isstrchar(self.head()):
+                    break
+
+            # If string parsing, ignore whatever
+            # character might come next as it is
+            # most likely being escaped.
+            elif symbol[-1] in b"\\":
+                continue
+
             # If future char sequence is the same
             # as the opening string sequence.
             elif self.lookahead_matchlast():
@@ -324,7 +337,7 @@ class BasicSymbolParser(SymbolParser[T]):
 
             # If the symbol matches the opening
             # string sequence.
-            elif self.symbol_history[1] == symbol:
+            elif self.symbol_history[1] == symbol and symbol_isstrsym(self.symbol_history[1]):
                 break
 
             if self.end():
@@ -332,27 +345,6 @@ class BasicSymbolParser(SymbolParser[T]):
 
         if symbol_isstrsym(symbol):
             self.string_parsing = not self.string_parsing
-
-        return self.lineno(), column, symbol
-
-    def next_string(self):
-        """Parse the next string symbol."""
-
-        symbol = bytearray()
-        column = (self.read_head - self.last_line_at)
-
-        while True:
-            symbol.append(self.head())
-            self.advance()
-
-            if symbol_isstrsym(symbol):
-                break
-            # The next sequence of characters
-            # matches the previous symbol.
-            if self.lookahead_matchlast():
-                break
-            if self.head() not in self.last_symbol:
-                continue
 
         return self.lineno(), column, symbol
 
@@ -387,6 +379,10 @@ def char_ispuncchar(char: bytes | int):
 
 def char_istermchar(char: bytes | int):
     return any([char == tc for tc in TERM_CHARS])
+
+
+def char_isstrchar(char: bytes | int):
+    return char in STR_CHARS
 
 
 def char_isstructchar(char: bytes | int):
