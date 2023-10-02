@@ -37,12 +37,12 @@ class TreeNode(typing.Protocol):
         """Set the parent node of this node."""
 
 
-class BasicTreeNode(TreeNode):
-    parent:   typing.Self | None
-    children: list[typing.Self]
+class BasicNode(TreeNode):
+    parent:   TreeNode | None
+    children: list[TreeNode]
     tk:       Token
 
-    def __init__(self, token: Token, parent: typing.Self | None = None):
+    def __init__(self, token: Token, parent: TreeNode | None = None):
         self.parent = parent
         self.children = []
         self.tk = token
@@ -72,6 +72,80 @@ class BasicTreeNode(TreeNode):
         self.parent = node
 
 
+class UnaryOperNode(BasicNode):
+    """
+    Represents an opeartion which takes one
+    argument.
+
+    The argument is consumed into this node as a
+    child node.
+    """
+
+    # &x; // address of name.
+    # *x; // pointer dereference.
+    def __init__(self, token: Token, parent: TreeNode | None = None):
+        super().__init__(token, parent)
+        self.children = [dummy_node()]
+
+    @property
+    def child(self):
+        return self.children[0]
+
+
+class BinaryOperNode(BasicNode):
+    """
+    Represents an operation which takes two
+    arguments.
+
+    Arguments are consumed in this node as child
+    nodes; a left and a right.
+    """
+
+    # x + y; // Arithmetic operations.
+    # x = y; // Assignment operations.
+    # x : int; // name declaration.
+    def __init__(self, token: Token, parent: TreeNode | None = None):
+        super().__init__(token, parent)
+        self.children = [dummy_node()]*2
+
+    @property
+    def left(self):
+        return self.children[0]
+
+    @property
+    def right(self):
+        return self.children[1]
+
+
+class TernaryOperNode(BasicNode):
+    """
+    Represents an operation which takes three
+    arguments.
+
+    Arguments are consumed in this node as child
+    nodes; a left, a right and a center.
+    """
+
+    # """some_junk"""; // String initializations.
+    # (x, y); // Tuple initialization.
+    # (x + (y * 2)); // Complex arithmetic operations.
+    def __init__(self, token: Token, parent: TreeNode | None = None):
+        super().__init__(token, parent)
+        self.children = [dummy_node()]*3
+
+    @property
+    def left(self):
+        return self.children[0]
+
+    @property
+    def center(self):
+        return self.children[1]
+
+    @property
+    def right(self):
+        return self.children[2]
+
+
 class TreeParser:
     nodes:         typing.Sequence[TreeNode]
     nodes_history: tuple[TreeNode, TreeNode, TreeNode]
@@ -83,8 +157,7 @@ class TreeParser:
 
         # Prepopulating token history with
         # junk nodes.
-        dummy_token = Token(-1, -1, bytearray())
-        self.nodes_history = tuple([BasicTreeNode(dummy_token)]*3) #type: ignore[assignment]
+        self.nodes_history = tuple([dummy_node()]*3) #type: ignore[assignment]
 
     @property
     def current(self):
@@ -135,8 +208,14 @@ class TreeParser:
         node.
         """
 
-        node = BasicTreeNode(self.lexer.next())
+        node = BasicNode(self.lexer.next())
         self.nodes_history = (*self.nodes_history[-2:], node)
+
+
+def dummy_node():
+    """Creates an instance of an empty node."""
+
+    return BasicNode(Token(-1, -1, bytearray()))
 
 
 if __name__ == "__main__":
