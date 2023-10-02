@@ -110,14 +110,22 @@ class TreeParser:
 
         return self.nodes_history[-2]
 
+    def done(self):
+        """
+        Parsing has reached end of lexer tokens.
+        """
+
+        return self.lexer.end()
+
     def parse(self):
         """
         Parse the nodes into from lexer into
         tree.
         """
 
-        while not self.lexer.end():
+        while not self.done():
             self.update()
+            # TODO: implment parsing.
             print(repr(self.current.token))
 
     def update(self):
