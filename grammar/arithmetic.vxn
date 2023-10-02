@@ -1,0 +1,19 @@
+# Here we will describe the expected definition
+# and behavior of arithmetic in Vixen.
+# Frankly, these definitions should be self
+# explanitory, but we are also using this file
+# to test the performance of these operations.
+
+# Defines two integer values x and y.
+x,y: int;
+
+# Define one integer value z.
+z: int;
+
+x + y;
+x * y;
+x - y;
+x ** y;
+x / y;
+
+x + (y * z) ** 3;
