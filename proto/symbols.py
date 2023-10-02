@@ -309,6 +309,7 @@ class BasicSymbolParser(SymbolParser[T]):
                     break
                 if char_istermchar(self.head()):
                     break
+
                 # Gratuitious most likely.
                 if char_isstructchar(symbol):
                     break
