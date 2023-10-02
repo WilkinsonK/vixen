@@ -513,7 +513,7 @@ def main():
         (11, 0, bytearray(b'EOF'))
     ]
 
-    with open("grammar/test_symbols.vxn", "rb") as fd:
+    with open("tests/test_symbols.vxn", "rb") as fd:
         for symbol in BasicSymbolParser(fd):
             symbols_parsed.append(symbol)
 
