@@ -39,6 +39,8 @@ def main():
     args = prog.parse_args(namespace=VixenCliNamespace())
     if not args.file and not args.cinput:
         panic("no input was provided.", prog)
+    elif args.file and args.cinput:
+        panic("cannot handle more than one input source.")
 
     if args.cinput:
         lexer = BasicLexer(args.cinput)
