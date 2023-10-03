@@ -17,6 +17,9 @@ def register_node_type(cls: type["TreeNode"]) -> type["TreeNode"]:
 class TreeNode(typing.Protocol):
     """Abstract Syntax Tree (AST) node."""
 
+    def __init__(self, token: Token, parent: typing.Self | None = None):
+        """Initialize an AST node."""
+
     @property
     def token(self) -> Token:
         """Underlying token."""
@@ -34,7 +37,7 @@ class TreeNode(typing.Protocol):
         """Add child node to this node."""
 
     @abc.abstractmethod
-    def get_children(self, node: typing.Self) -> typing.Sequence[typing.Self]:
+    def get_children(self) -> typing.Sequence[typing.Self]:
         """Get the child nodes of this node."""
 
     @abc.abstractmethod
@@ -85,7 +88,7 @@ class BasicNode(TreeNode):
     def add_child(self, node: typing.Self):
         self.children.append(node)
 
-    def get_children(self, node: typing.Self):
+    def get_children(self):
         return self.children
 
     def get_parent(self):
@@ -117,7 +120,6 @@ class NumericNode(ValueNode):
     """A node representing a numeric value."""
 
 
-
 @register_node_type
 class NumericFltNode(NumericNode):
     """
@@ -138,32 +140,6 @@ class NumericIntNode(NumericNode):
 
 
 @register_node_type
-class UnaryNode(BasicNode):
-    """
-    Represents an operartion which takes one
-    argument.
-
-    The argument is consumed into this node as a
-    child node.
-    """
-
-    tk_viable_types = (
-        TokenType.OperBtAnd,
-        TokenType.OperStamp
-    )
-
-    # &x; // address of name.
-    # *x; // pointer dereference.
-    def __init__(self, token: Token, parent: TreeNode | None = None):
-        super().__init__(token, parent)
-        self.children = [dummy_node()]
-
-    @property
-    def child(self):
-        return self.children[0]
-
-
-@register_node_type
 class BinaryOperNode(BasicNode):
     """
     Represents an operation which takes two
@@ -174,10 +150,32 @@ class BinaryOperNode(BasicNode):
     """
 
     tk_viable_types = (
+        TokenType.OperAddressOf,
+        TokenType.OperAsk,
+        TokenType.OperAssign,
+        TokenType.OperBtAnd,
+        TokenType.OperBtOr,
+        TokenType.OperBtXor,
+        TokenType.OperDecrement,
+        TokenType.OperDelete,
         TokenType.OperDivide,
         TokenType.OperDivFloor,
+        TokenType.OperIncrement,
+        TokenType.OperLgAnd,
+        TokenType.OperLgNot,
+        TokenType.OperLgOr,
+        TokenType.OperLgGt,
+        TokenType.OperLgGte,
+        TokenType.OperLgLt,
+        TokenType.OperLgLte,
         TokenType.OperMinus,
+        TokenType.OperMinusEq,
+        TokenType.OperModulus,
         TokenType.OperPlus,
+        TokenType.OperPlusEq,
+        TokenType.OperPower,
+        TokenType.OperPtrAttr,
+        TokenType.OperStamp,
         TokenType.OperStar
     )
 
@@ -192,39 +190,58 @@ class BinaryOperNode(BasicNode):
     def left(self):
         return self.children[0]
 
+    @left.setter
+    def left(self, node: TreeNode):
+        node.set_parent(self)
+        self.children[0] = node
+
     @property
     def right(self):
         return self.children[1]
+
+    @right.setter
+    def right(self, node: TreeNode):
+        node.set_parent(self)
+        self.children[1] = node
 
 
 @register_node_type
-class TernaryOperNode(BasicNode):
+class KeywordNode(BinaryOperNode):
     """
-    Represents an operation which takes three
-    arguments.
-
-    Arguments are consumed in this node as child
-    nodes; a left, a right and a center.
+    Represents the relationship between this
+    node and one or two other nodes as a built-in
+    feature to the language being parsed.
     """
 
-    # """some_junk"""; // String initializations.
-    # (x, y); // Tuple initialization.
-    # (x + (y * 2)); // Complex arithmetic operations.
-    def __init__(self, token: Token, parent: TreeNode | None = None):
-        super().__init__(token, parent)
-        self.children = [dummy_node()]*3
-
-    @property
-    def left(self):
-        return self.children[0]
-
-    @property
-    def center(self):
-        return self.children[1]
-
-    @property
-    def right(self):
-        return self.children[2]
+    # Overriding types from Binary Operator Node.
+    tk_viable_types = ( #type: ignore[assignment]
+        TokenType.KwdAs,
+        TokenType.KwdBreak,
+        TokenType.KwdCatch,
+        TokenType.KwdContinue,
+        TokenType.KwdConstant,
+        TokenType.KwdClass,
+        TokenType.KwdDefault,
+        TokenType.KwdDelete,
+        TokenType.KwdElse,
+        TokenType.KwdFor,
+        TokenType.KwdFrom,
+        TokenType.KwdFunc,
+        TokenType.KwdIf,
+        TokenType.KwdImport,
+        TokenType.KwdInclude,
+        TokenType.KwdNew,
+        TokenType.KwdNil,
+        TokenType.KwdNull,
+        TokenType.KwdPanic,
+        TokenType.KwdProto,
+        TokenType.KwdRaise,
+        TokenType.KwdReturn,
+        TokenType.KwdStatic,
+        TokenType.KwdTry,
+        TokenType.KwdWhile,
+        TokenType.KwdWith
+    )
 
 
 class TreeParser:
@@ -299,20 +316,30 @@ class TreeParser:
         node.
         """
 
-        tnext = self.lexer.next()
-        node  = ErrorNode(tnext)
-
-        for nodet in TreeNodeMapping.values():
-            if nodet.token_isviable(tnext):
-                node = nodet(tnext)
-
+        node = node_from_token(self.lexer.next())
         self.nodes_history = (*self.nodes_history[-2:], node)
 
 
-def dummy_node():
+def dummy_node() -> TreeNode:
     """Creates an instance of an empty node."""
 
     return BasicNode(Token(-1, -1, bytearray()))
+
+
+def node_from_token(token: Token) -> TreeNode:
+    """
+    Creates a instance of some node from a given
+    token.
+    """
+
+    node = ErrorNode(token)
+
+    for ntype in TreeNodeMapping.values():
+        if not ntype.token_isviable(token):
+            continue
+        node = ntype(token) #type: ignore[assignment]
+
+    return node
 
 
 class ParserError(Exception):
