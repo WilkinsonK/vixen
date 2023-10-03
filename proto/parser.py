@@ -4,6 +4,15 @@ import typing
 from .symbols import Symbol
 from .tokens import BasicLexer, Lexer, Token, TokenType
 
+TreeNodeMapping: typing.Mapping[str, type["TreeNode"]] = {}
+
+
+def register_node_type(cls: type["TreeNode"]) -> type["TreeNode"]:
+    """Maps node types for parse lookup."""
+
+    TreeNodeMapping[cls.__name__] = cls #type: ignore[index]
+    return cls
+
 
 class TreeNode(typing.Protocol):
     """Abstract Syntax Tree (AST) node."""
@@ -36,16 +45,30 @@ class TreeNode(typing.Protocol):
     def set_parent(self, node: typing.Self) -> None:
         """Set the parent node of this node."""
 
+    @classmethod
+    @abc.abstractmethod
+    def token_isviable(cls, token: Token) -> bool:
+        """
+        Given token is an eligible candidate for
+        this node type.
+        """
+
 
 class BasicNode(TreeNode):
     parent:   TreeNode | None
     children: list[TreeNode]
     tk:       Token
 
+    # Eligible token types.
+    tk_viable_types: tuple[TokenType, ...] = ()
+
     def __init__(self, token: Token, parent: TreeNode | None = None):
         self.parent = parent
         self.children = []
         self.tk = token
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.token!r})"
 
     @property
     def token(self):
@@ -71,15 +94,63 @@ class BasicNode(TreeNode):
     def set_parent(self, node: typing.Self):
         self.parent = node
 
+    @classmethod
+    def token_isviable(cls, token: Token):
+        return token.ttype in cls.tk_viable_types
 
-class UnaryOperNode(BasicNode):
+
+class ErrorNode(BasicNode):
     """
-    Represents an opeartion which takes one
+    Represents a node where there was an error in
+    parsing.
+    """
+
+
+class ValueNode(BasicNode):
+    """
+    A node which requires no arguments, but
+    instead represents a value.
+    """
+
+
+class NumericNode(ValueNode):
+    """A node representing a numeric value."""
+
+
+
+@register_node_type
+class NumericFltNode(NumericNode):
+    """
+    A node representing a floating point
+    numerical value.
+    """
+
+
+@register_node_type
+class NumericIntNode(NumericNode):
+    """A node representing an integer value."""
+
+    tk_viable_types = (
+        TokenType.NumBin,
+        TokenType.NumInt,
+        TokenType.NumHex,
+        TokenType.NumOct)
+
+
+@register_node_type
+class UnaryNode(BasicNode):
+    """
+    Represents an operartion which takes one
     argument.
 
     The argument is consumed into this node as a
     child node.
     """
+
+    tk_viable_types = (
+        TokenType.OperBtAnd,
+        TokenType.OperStamp
+    )
 
     # &x; // address of name.
     # *x; // pointer dereference.
@@ -92,6 +163,7 @@ class UnaryOperNode(BasicNode):
         return self.children[0]
 
 
+@register_node_type
 class BinaryOperNode(BasicNode):
     """
     Represents an operation which takes two
@@ -100,6 +172,14 @@ class BinaryOperNode(BasicNode):
     Arguments are consumed in this node as child
     nodes; a left and a right.
     """
+
+    tk_viable_types = (
+        TokenType.OperDivide,
+        TokenType.OperDivFloor,
+        TokenType.OperMinus,
+        TokenType.OperPlus,
+        TokenType.OperStar
+    )
 
     # x + y; // Arithmetic operations.
     # x = y; // Assignment operations.
@@ -117,6 +197,7 @@ class BinaryOperNode(BasicNode):
         return self.children[1]
 
 
+@register_node_type
 class TernaryOperNode(BasicNode):
     """
     Represents an operation which takes three
@@ -147,9 +228,9 @@ class TernaryOperNode(BasicNode):
 
 
 class TreeParser:
-    nodes:         typing.Sequence[TreeNode]
-    nodes_history: tuple[TreeNode, TreeNode, TreeNode]
-    lexer:         Lexer
+    nodes:            typing.Sequence[TreeNode]
+    nodes_history:    tuple[TreeNode, TreeNode, TreeNode]
+    lexer:            Lexer
 
     def __init__(self, lexer: Lexer):
         self.lexer = lexer
@@ -198,8 +279,18 @@ class TreeParser:
 
         while not self.done():
             self.update()
-            # TODO: implment parsing.
-            print(repr(self.current.token))
+
+            if not isinstance(self.current, ErrorNode):
+                # TODO: implment parsing.
+                print(repr(self.current))
+                continue
+
+            token = self.current.token
+            ttype = self.current.ttype
+            if self.current.ttype is TokenType.NameGeneric:
+                raise ParserUnknownNameError(f"Unknown name '{token!s}'.")
+            else:
+                raise ParserUnsupportedError(f"Unsupported type {ttype.name!r}")
 
     def update(self):
         """
@@ -208,7 +299,13 @@ class TreeParser:
         node.
         """
 
-        node = BasicNode(self.lexer.next())
+        tnext = self.lexer.next()
+        node  = ErrorNode(tnext)
+
+        for nodet in TreeNodeMapping.values():
+            if nodet.token_isviable(tnext):
+                node = nodet(tnext)
+
         self.nodes_history = (*self.nodes_history[-2:], node)
 
 
@@ -216,6 +313,26 @@ def dummy_node():
     """Creates an instance of an empty node."""
 
     return BasicNode(Token(-1, -1, bytearray()))
+
+
+class ParserError(Exception):
+    """
+    Generic exception for when something goes
+    wrong while building AST.
+    """
+
+
+class ParserUnknownNameError(ParserError):
+    """
+    Raised when a name token is invalid or
+    unknown.
+    """
+
+
+class ParserUnsupportedError(ParserError):
+    """
+    Raised when the token is not a supported type.
+    """
 
 
 if __name__ == "__main__":
