@@ -1,278 +1,282 @@
-import os
-import string
+#!/bin/python3
+"""
+tokens.py
+---
 
-Lineno = Column = int
-Symbol = bytearray
+Author: Keenan W. Wilkinson
+Date: 1 Oct 2023
+---
 
-COMMENT_CHAR = b"#"
-DIGIT_CHARS = string.digits.encode()
-DIGIT_SEP_CHARS = b"."
-END_OF_FILE = bytearray(b"EOF")
-END_OF_LINE = bytearray(b"EOL")
-NAME_CHARS = (string.ascii_letters + string.digits + "_").encode()
-NEWLINE_CHAR = os.linesep.encode()
-STR_CHARS = b"'\""
-STR_SYMBOLS = (
-    bytearray(b"\""),
-    bytearray(b"\""*3),
-    bytearray(b"'"),
-    bytearray(b"'"*3),
-    bytearray(b"`"),
-    bytearray(b"`"*3)
-)
-TERM_CHARS = b";"
-WHITESPACE = string.whitespace.encode()
+Provides tools for general purpose lexical analysis where tokens are
+parsed first by rules most common to the majority of programming
+language structures, and then categorized into `TokenType`s with
+additional metadata.
+
+The reasoning behind this module is to ease the responsibility of
+parse-time tasks where it should make identifying components of
+complex structures simpler, quicker, with pre-categorized elements.
+"""
+
+import enum
+import typing
+
+from .symbols import Symbol, Column, Lineno, BasicSymbolParser, SymbolParser
+from .symbols import symbol_isnumeric
+
+TokenTypeMapping: typing.Mapping[bytes, int] = {}
 
 
-class SymbolParser:
+def auto(symbol: bytes):
     """
-    Parses a buffer of data into symbols that are
-    usable for token parsing.
+    Maps token IDs to their respective symbol.
     """
 
-    data:             bytes
-    dimension_line:   int
-    last_line_at:     int
-    last_symbol:      bytearray
-    read_head:        int
-    string_parsing:   bool
+    value = enum.auto()
+    TokenTypeMapping[symbol] = value #type: ignore[index]
 
-    def __init__(self, data: bytes | str):
-
-        if isinstance(data, str):
-            data = data.encode()
-
-        self.dimension_line = 1
-        self.data = data
-        self.last_line_at = 0
-        self.last_symbol = bytearray()
-        self.read_head = 0
-        self.string_parsing = False
-
-    def advance(self):
-        """Move the read head forward."""
-
-        if char_isnewline(self.head()):
-            self.dimension_line += 1
-            self.last_line_at = self.read_head
-
-        self.read_head += 1
-
-    def end(self):
-        """
-        Read head is at the end of data stream or
-        not.
-        """
-
-        return self.read_head >= len(self.data)
-
-    def head(self):
-        """Character at read head."""
-
-        # Fixes a bug where iterating to `the end`
-        # does not always return the last symbol.
-        # In particular, when the final symbol is
-        # 1 char long.
-        if self.end():
-            return self.data[-1]
-        return self.data[self.read_head]
-
-    def lineno(self):
-        """The current line number."""
-
-        return self.dimension_line
-
-    def lookahead(self, head: int):
-        """
-        Get slice of bytes of `head` length of
-        data stream relative to read head.
-        """
-
-        return memoryview(self.data)[self.read_head:self.read_head+head]
-
-    # New next implementation should return a
-    # triplet of values.
-    # (lineno, column_start, symbol)
-    def next(self) -> tuple[Lineno, Column, Symbol]:
-        """Parse next symbol."""
-
-        symbol = bytearray()
-        column = 0
-
-        if not self.string_parsing:
-            while char_isnoparse(self.head()) and not self.end():
-                self.advance()
-
-            while char_iscomment(self.head()):
-                # Comments cannot exist inline with code.
-                # The end of comments are determined
-                # based on the end of line or EOF.
-                while not char_isnewline(self.head()) and not self.end():
-                    self.advance()
-                # Second pass ensures additional whitespace
-                # after a comment is eliminated.
-                while char_isnoparse(self.head()) and not self.end():
-                    self.advance()
-
-            if self.end():
-                return self.lineno(), column, END_OF_LINE
-
-        while True:
-            if not self.string_parsing:
-                if char_isnoparse(self.head()):
-                    break
-                if char_iscomment(self.head()):
-                    break
-
-                # Punctuation cannot exist in a name.
-                # Unless said name is numeric, then
-                # '.' is accepted.
-                if not symbol_isname(symbol, self.head()):
-                    if not symbol_isnumeric(symbol, self.head()):
-                        break
-                # Names cannot exist in punctuation.
-                if not symbol_ispunc(symbol, self.head()):
-                    break
-
-                # Terminator char must start new
-                # sequence.
-                if symbol_istermed(symbol, self.head()):
-                    break
-
-            # Indescriminate string parsing.
-            elif self.head() in self.last_symbol:
-                # String termination must match
-                # string initiation.
-                if self.lookahead(len(self.last_symbol)) == self.last_symbol:
-                    break
-
-            # String termination should terminate
-            # string parsing.
-            elif symbol_isstrsym(symbol):
-                break
-
-            column = (self.read_head - self.last_line_at) - len(symbol)
-            symbol.append(self.head())
-
-            if self.end():
-                break
-            self.advance()
-
-        self.last_symbol = symbol
-        if symbol_isstrsym(symbol):
-            self.string_parsing = not self.string_parsing
-
-        return self.lineno(), column, symbol
+    return value
 
 
-def char_iscomment(char: bytes | int):
-    return char in COMMENT_CHAR
+class TokenType(int, enum.ReprEnum):
+    # Most of the 'types' in this enumerator are
+    # too specific for this tokenizer to
+    # identifiy on it's own. Most likely, we will
+    # keep these definitions here for come parse
+    # time.
+
+    Error          = auto(b"<error>")
+    ErrorUnknown   = auto(b"<error:unknown>")
+    ErrorBadString = auto(b"<error:bad_string>")
+
+    Kwd            = auto(b"<keyword>")
+    KwdAs          = auto(b"as")
+    KwdBreak       = auto(b"break")
+    KwdCatch       = auto(b"catch")
+    KwdContinue    = auto(b"continue")
+    KwdConstant    = auto(b"const")
+    KwdClass       = auto(b"class")
+    KwdDefault     = auto(b"default")
+    KwdDelete      = auto(b"delete")
+    KwdElse        = auto(b"else")
+    KwdFor         = auto(b"for")
+    KwdFrom        = auto(b"from")
+    KwdFunc        = auto(b"func")
+    KwdIf          = auto(b"if")
+    KwdImport      = auto(b"import")
+    KwdInclude     = auto(b"include")
+    KwdNew         = auto(b"new")
+    KwdNil         = auto(b"nil")
+    KwdNull        = auto(b"null")
+    KwdPanic       = auto(b"panic")
+    KwdProto       = auto(b"proto")
+    KwdRaise       = auto(b"raise")
+    KwdReturn      = auto(b"return")
+    KwdStatic      = auto(b"static")
+    KwdTry         = auto(b"try")
+    KwdWhile       = auto(b"while")
+    KwdWith        = auto(b"with")
+
+    Name           = auto(b"<name>")
+    NameGeneric    = auto(b"<name:generic>")
+
+    Num            = auto(b"<numeric>")
+    NumBin         = auto(br"0b%")
+    NumFlt         = auto(br"%.%")
+    NumHex         = auto(br"0x%")
+    NumInt         = auto(br"%")
+    NumOct         = auto(br"0o%")
+
+    Oper           = auto(b"<operation>")
+    OperAddressOf  = auto(b"&")
+    OperAsk        = auto(b"?")
+    OperAssign     = auto(b"=")
+    OperBtAnd      = auto(b"&")
+    OperBtOr       = auto(b"|")
+    OperBtXor      = auto(b"^")
+    OperDecrement  = auto(b"--")
+    OperDelete     = auto(b"~")
+    OperDivide     = auto(b"/")
+    OperDivFloor   = auto(b"//")
+    OperIncrement  = auto(b"++")
+    OperLgAnd      = auto(b"&&")
+    OperLgNot      = auto(b"!")
+    OperLgOr       = auto(b"||")
+    OperLgGt       = auto(b">")
+    OperLgGte      = auto(b">=")
+    OperLgLt       = auto(b"<")
+    OperLgLte      = auto(b"<=")
+    OperMinus      = auto(b"-")
+    OperMinusEq    = auto(b"-=")
+    OperModulus    = auto(br"%")
+    OperPlus       = auto(b"+")
+    OperPlusEq     = auto(b"+=")
+    OperPower      = auto(b"**")
+    OperPtrAttr    = auto(b"->")
+    OperStamp      = auto(b"@")
+    OperStar       = auto(b"*")
+
+    Punc           = auto(b"<punctuation>")
+    PuncColon      = auto(b":")
+    PuncComma      = auto(b",")
+    PuncDot        = auto(b".")
+    PuncLBrace     = auto(b"{")
+    PuncLBracket   = auto(b"[")
+    PuncLParen     = auto(b"(")
+    PuncRBrace     = auto(b"}")
+    PuncRBracket   = auto(b"]")
+    PuncRParen     = auto(b")")
+    PuncTerminator = auto(b";")
+
+    Str            = auto(b"<string>")
+    StrSingleBkt   = auto(b"`")
+    StrSingleDbl   = auto(b"\"")
+    StrSingleSgl   = auto(b"'")
+    StrTripleBkt   = auto(b"```")
+    StrTripleDbl   = auto(b"\"\"\"")
+    StrTripleSgl   = auto(b"'''")
+    StrExpression  = auto(b"<string:expression>")
+
+    CTRLChar       = auto(b"<ctrl_character>")
+    CTRLCharEOF    = auto(b"EOF")
+    CTRLCharEOL    = auto(b"EOL")
 
 
-def char_isdigitsep(char: bytes | int):
-    return char in DIGIT_SEP_CHARS
+class Token:
+    symbol: Symbol
+    ttype:  TokenType
+    lineno: Lineno #type: ignore
+    column: Column #type: ignore
+    file:   bytes | None
+
+    def __init__(
+        self,
+        lineno: Lineno, #type: ignore
+        column: Column, #type: ignore
+        symbol: Symbol,
+        file: bytes | None = None):
+        """Initialize a `Token` object."""
+
+        self.symbol = symbol
+        self.lineno = lineno
+        self.column = column
+        self.file   = file
+
+        if symbol_isnumeric(symbol):
+            type_finder = tokens_find_numtype
+        else:
+            type_finder = tokens_find_gentype
+
+        self.ttype = type_finder(symbol)
+
+    def __str__(self):
+        return self.symbol.decode()
+
+    def __repr__(self):
+        if self.file:
+            location = (
+                f"("
+                    f"lineno: {self.lineno}, "
+                    f"col: {self.column}, "
+                    f"file: {self.file.decode()!r}"
+                f")")
+        else:
+            location = f"(lineno: {self.lineno}, col: {self.column})"
+
+        return (
+            f"{self.ttype.name}"
+            f"[{self.symbol.decode()!r}]"
+            f"@{location}")
 
 
-def char_isnamechar(char: bytes | int):
-    return char in NAME_CHARS
+class Lexer(SymbolParser[Token]):
+    """Parses a stream of bytes into tokens."""
 
 
-def char_isnewline(char: bytes | int):
-    return char in NEWLINE_CHAR
+class BasicLexer(BasicSymbolParser[Token]):
+
+    # Technically needed only for type analysis.
+    def __iter__(self) -> typing.Generator[Token, None, None]:
+        while not self.end():
+            yield self.next()
+
+    def next(self) -> Token:
+        """Parse next `Token`."""
+
+        return Token(*super().next(), self.file) #type: ignore[call-arg]
 
 
-def char_isnoparse(char: bytes | int):
-    return char in WHITESPACE
+def tokens_find_errunk(_: Symbol):
+    """
+    Dummy function which always returns
+    `TokenType.ErrorUnknown`.
+    """
+
+    return TokenType.ErrorUnknown
 
 
-def char_ispuncchar(char: bytes | int):
-    return char not in NAME_CHARS
+def tokens_find_gentype(symbol: Symbol):
+    """
+    Identifies the specific `TokenType` of a
+    generic symbol.
+    """
+
+    try:
+        key = TokenTypeMapping[bytes(symbol)]
+    except:
+        return TokenType.NameGeneric
+
+    # Key is `enum.auto` type, not int.
+    return TokenType(key.value) #type: ignore
 
 
-def char_istermchar(char: bytes | int):
-    return any([char == tc for tc in TERM_CHARS])
+def tokens_find_numtype(symbol: Symbol):
+    """
+    Identifies the specific `TokenType` of a
+    numeric symbol.
+    """
+
+    if symbol.count(b"0b") > 0:
+        return TokenType.NumBin
+    if symbol.count(b".") > 0:
+        return TokenType.NumFlt
+    if symbol.count(b"0x") > 0:
+        return TokenType.NumHex
+    if symbol.count(b"0o") > 0:
+        return TokenType.NumOct
+
+    return TokenType.NumInt
 
 
-def symbol_isname(symbol: bytearray, next_char: bytes | int):
-    return not (
-        bool(
-            symbol
-            and symbol[0] in NAME_CHARS
-            and symbol[-1] in NAME_CHARS)
-        and char_ispuncchar(next_char))
+def tokens_find_strtype(symbol: Symbol):
+    """
+    Identifies the specific `TokenType` of a
+    string symbol.
+    """
 
+    if len(symbol) >= 6 and symbol[:3] == symbol[-3:]:
+        sample = symbol[:3]
+    elif len(symbol) >= 2 and symbol[:1] == symbol[-1:]:
+        sample = symbol[:2]
+    else:
+        return TokenType.ErrorUnknown
 
-def symbol_isnumeric(symbol: bytearray, next_char: bytes | int):
-    return bool(
-        symbol
-        and all([i in DIGIT_CHARS + DIGIT_SEP_CHARS for i in symbol])
-        and char_isdigitsep(next_char)
-        and (symbol.count(b".") + 1) < 2)
+    if sample == b"`":
+        return TokenType.StrSingleBkt
+    if sample == b"\"":
+        return TokenType.StrSingleDbl
+    if sample == b"'":
+        return TokenType.StrSingleSgl
+    if sample == b"```":
+        return TokenType.StrTripleBkt
+    if sample == b"\"\"\"":
+        return TokenType.StrTripleDbl
+    if sample == b"'''":
+        return TokenType.StrTripleSgl
 
-
-def symbol_ispunc(symbol: bytearray, next_char: bytes | int):
-    return not (
-        bool(
-            symbol
-            and symbol[0] not in NAME_CHARS
-            and symbol[-1] not in NAME_CHARS)
-        and char_isnamechar(next_char))
-
-
-def symbol_isstrsym(symbol: bytearray):
-    return bool(symbol and symbol in STR_SYMBOLS)
-
-
-def symbol_istermed(symbol: bytearray, next_char: bytes | int):
-    return bool(
-        symbol
-        and any([tc not in symbol for tc in TERM_CHARS])
-        and char_istermchar(next_char))
-
-
-def main():
-    symbols_parsed = []
-    symbols_tested = [
-        (5, 1, bytearray(b'sx')),
-        (5, 3, bytearray(b':')),
-        (5, 5, bytearray(b'int')),
-        (5, 9, bytearray(b'=')),
-        (5, 11, bytearray(b'0')),
-        (5, 12, bytearray(b';')),
-        (6, 1, bytearray(b'c')),
-        (6, 2, bytearray(b':')),
-        (6, 4, bytearray(b'str')),
-        (6, 8, bytearray(b'=')),
-        (6, 10, bytearray(b"\'\'\'")),
-        (6, 13, bytearray(b"d%\'-\'`")),
-        (6, 19, bytearray(b"\'\'\'")),
-        (6, 22, bytearray(b';')),
-        (7, 1, bytearray(b'x')),
-        (7, 2, bytearray(b'++')),
-        (7, 4, bytearray(b';')),
-        (7, 6, bytearray(b's')),
-        (7, 7, bytearray(b':')),
-        (7, 9, bytearray(b'flt')),
-        (7, 13, bytearray(b'=')),
-        (7, 15, bytearray(b'49.9')),
-        (7, 19, bytearray(b'.')),
-        (7, 20, bytearray(b'3')),
-        (7, 21, bytearray(b';')),
-        (10, 0, bytearray(b'EOL'))
-    ]
-
-    with open("grammar/parse_test.vxn", "rb") as fd:
-        reader = SymbolParser(fd.read())
-
-    while not reader.end():
-        symbols_parsed.append(reader.next())
-
-    for st, sp in zip(symbols_tested, symbols_parsed):
-        print(st, sp, sep="  \t\t")
-        assert st == sp, f"Received invalid token {sp!r}."
-
-    return 0
+    return TokenType.ErrorBadString
 
 
 if __name__ == "__main__":
-    exit(main())
+    with open("grammar/control.vxn", "rb") as fd:
+        for tk in BasicLexer(fd):
+            print(repr(tk))

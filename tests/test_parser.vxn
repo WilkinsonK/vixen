@@ -1,0 +1,28 @@
+# This file is meant to be a 'functioning
+# prototype' of Vixen. Meaning that it should
+# contain tokens of the language that we are
+# expecting, using them in terms that our parser
+# should be able to construct a valid AST from.
+
+import "std.sys" as sys;
+import "std.io" as io;
+
+# We want to be able to limit the assets that are
+# being loaded from external sources.
+import "package.module" as mod1;
+from "pacakge.module" import *;
+from "package.module" import { CustomObject, custom_function };
+
+func main(): int {
+    x,y: int;
+    x = 88;
+    y = 1612;
+
+    # Should we find a way to allow string
+    # interpolation?
+    io.write(sys.stdout, "x = {x}\n");
+    io.write(sys.stdout, "y = {y}\n");
+    io.write(sys.stdout, "sum(x,y) = {x+y}");
+
+    return 0;
+}

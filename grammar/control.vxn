@@ -1,0 +1,58 @@
+# This file describes the control statements
+# Vixen will be using, and how they will be
+# implemented.
+
+# Note the use of curly braces "{}". Vixen will
+# be designed with the intention of fluid body
+# definition where the format of the body will be
+# irrelevant to our compiler-- assuming that the
+# body is grammar/syntax compliant.
+
+break;
+continue;
+panic;
+raise;
+return;
+
+if (statement) {}
+
+if (statement) {
+    # codebody
+} else if (statement) {
+    # code body
+} else {
+    # code body
+}
+
+while (statement) {}
+
+# The `for-loop` is special in that it's statement
+# can have more than one 'shape', as it were.
+for (statement) {}
+for (object : iterable) {}
+for (sentinel; condition; modifier) {}
+
+# Context managers, as a feature, is probably one
+# of the best Python has come up with; we will be
+# stealing this feature into Vixen.
+#
+# A 'contextable_sentinel' is going to have to be
+# similar to the 'sentinel' in the classic
+# `for-loop` structure where the object is declared
+# in the statement. From here, we will implicitly
+# enter/exit that object's context.
+#
+# Optionally, we will allow the passing of an
+# object that has already been initialized.
+# Regardless, 'contextable_sentinel' context must
+# be entered on `with` structure, and exited when
+# leaving `with` body.
+with (contextable_sentinel) {}
+
+switch (statement) {
+    case value0:
+    case value1:
+    case andSoOn:
+    default:
+        break;
+}

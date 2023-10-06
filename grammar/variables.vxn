@@ -10,3 +10,6 @@ some_pointer:   flt* = &some_float;
 some_float += 0.15;
 some_integer++; # decrement operator (--) will follow suit.
 ++some_integer;
+
+# Inline variable declarations.
+x,y: int;
