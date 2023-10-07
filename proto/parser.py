@@ -57,18 +57,32 @@ class Parser(typing.Protocol):
     # of recursion calls are made; where the
     # highest priority is called last, and the
     # lowest first.
-    def parse_primary(self):
+
+    # OoP stmt 0
+    def parse_stmt(self):
         pass
 
-    def parse_additive(self):
+    # OoP stmt 1
+    def parse_expr(self):
         pass
 
-    def parse_multiplicative(self):
+    # OoP expr 0
+    def parse_expr_primative(self):
+        pass
+
+    # OoP expr 1
+    def parse_expr_additive(self):
+        pass
+
+    # OoP expr 2
+    def parse_expr_multiplicative(self):
         pass
 
 
 class TreeParser(Parser):
-    pass
+
+    def __init__(self, lexer: Lexer):
+        self.lexer = lexer
 
 
 if __name__ == "__main__":
