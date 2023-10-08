@@ -219,7 +219,7 @@ class BasicSymbolParser(SymbolParser[T]):
         # bone-headed calls to 'next' when there's
         # nothing left to parse.
         if self.end():
-            symbol = END_OF_FILE if self.lineno() else END_OF_LINE
+            symbol = END_OF_FILE if self.lineno() > 1 else END_OF_LINE
             return self.lineno(), 0, symbol
 
         # Determine what we are most likely parsing.
