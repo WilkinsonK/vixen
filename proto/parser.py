@@ -3,6 +3,7 @@ import typing
 from .nodes import (
     BinaryExpressionNode,
     ExpressionNode,
+    LiteralNode,
     LiteralFltNode,
     LiteralIdentNode,
     LiteralIntNode,
@@ -18,6 +19,9 @@ from .tokens import (
     Token,
     TokenType
 )
+
+P = typing.ParamSpec("P")
+ParseNextProtocol = typing.Callable[P, StatementNode | LiteralNode]
 
 
 class Parser(typing.Protocol):
@@ -107,8 +111,10 @@ class TreeParser(Parser):
         return self.current.symbol in (b"EOF", b"EOL")
 
     def expect(self, ttype: TokenType):
-        if self.next.ttype is not ttype:
-            raise TypeError(f"Unexpected token type {self.next.ttype!s}.")
+        if self.current.ttype is not ttype:
+            got = self.current.ttype
+            msg = f"Unexpected token type. Expected {ttype.name!r} got {got.name!r}"
+            raise TypeError(msg)
 
     def update(self):
         self.lexer_ribbon = (*self.lexer_ribbon[-2:], self.lexer.next())
@@ -148,14 +154,13 @@ class TreeParser(Parser):
 
     def parse_expr_binary(
         self,
-        kind: TokenType,
         expected_ops: tuple[TokenType, ...],
-        next_parser: typing.Callable[[], StatementNode] | None = None):
+        next_parser: ParseNextProtocol | None = None):
         """
         Parses some binary expression from the
         proceeding tokens.
         """
-
+    
         if not next_parser:
             next_parser = self.parse_expr_primative
 
@@ -169,22 +174,34 @@ class TreeParser(Parser):
 
         return left
 
-    # OoP expr 0
-    def parse_expr_primative(self):
+    # OoP stmt 1 expr 0
+    def parse_expr_primative(self) -> LiteralNode:
         """
         Parses a primitive node from the next
         lexer tokens.
         """
 
+        tk = self.current
         self.update()
-        if tokens_isgeneric(self.previous):
-            return LiteralIdentNode(self.previous)
-        if tokens_isfloat(self.previous):
-            return LiteralFltNode(self.previous)
-        if tokens_isinteger(self.previous):
-            return LiteralIntNode(self.previous)
+        if tokens_isgeneric(tk):
+            return LiteralIdentNode(tk)
+        elif tokens_isfloat(tk):
+            return LiteralFltNode(tk)
+        elif tokens_isinteger(tk):
+            return LiteralIntNode(tk)
+        elif tk.ttype is TokenType.PuncLParen:
+            expr = self.parse_expr()
+            self.expect(TokenType.PuncRParen)
+            self.update()
+            return expr
+        else:
+            loc = (
+                f"(lineno: {tk.lineno}, col: {tk.column})"
+            )
+            symbol = tk.symbol.decode()
+            raise TypeError(f"Unexpected token at {loc}. Got {symbol!r}")
 
-    # OoP expr 1
+    # OoP stmt 1 expr 1
     def parse_expr_multiplicative(self):
         """
         Parses an additive expression from the
@@ -199,12 +216,13 @@ class TreeParser(Parser):
             TokenType.OperDivide,
             TokenType.OperDivFloor,
             TokenType.OperModulus,
-            TokenType.OperStar
+            TokenType.OperStar,
+            TokenType.OperPower
         )
 
-        return self.parse_expr_binary("MultiplicativeOper", ops)
+        return self.parse_expr_binary(ops)
 
-    # OoP expr 2
+    # OoP stmt 1 expr 2
     def parse_expr_additive(self):
         """
         Parses an additive expression from the
@@ -222,7 +240,7 @@ class TreeParser(Parser):
         nexter = self.parse_expr_multiplicative
         ops    = (TokenType.OperPlus, TokenType.OperMinus)
 
-        return self.parse_expr_binary("AdditiveOper", ops, nexter)
+        return self.parse_expr_binary(ops, nexter)
 
 
 if __name__ == "__main__":
