@@ -276,6 +276,31 @@ def tokens_find_strtype(symbol: Symbol):
     return TokenType.ErrorBadString
 
 
+def tokens_isfloat(token: Token):
+    """Token type is a floating point value."""
+
+    return token.ttype is TokenType.NumFlt
+
+
+def tokens_isgeneric(token: Token):
+    """Token type is an unidentified name."""
+
+    return token.ttype is TokenType.NameGeneric
+
+
+def tokens_isinteger(token: Token):
+    """
+    Token type is an integer digestable value.
+    """
+
+    types = (
+        TokenType.NumBin,
+        TokenType.NumHex,
+        TokenType.NumInt,
+        TokenType.NumOct)
+    return token.ttype in types
+
+
 if __name__ == "__main__":
     with open("grammar/control.vxn", "rb") as fd:
         for tk in BasicLexer(fd):

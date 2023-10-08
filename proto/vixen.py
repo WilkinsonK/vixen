@@ -1,6 +1,7 @@
 #!/bin/python3
 import argparse as ap
 import os
+import pprint
 import sys
 
 from .parser import TreeParser
@@ -49,8 +50,7 @@ def main():
 
     tp = TreeParser(lexer)
     tp.parse()
-    for node in tp.nodes:
-        print(repr(node.token))
+    pprint.pp(tp.digest())
 
 
 if __name__ == "__main__":

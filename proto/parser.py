@@ -1,368 +1,249 @@
-import abc
 import typing
 
-from .symbols import Symbol
-from .tokens import BasicLexer, Lexer, Token, TokenType
+from .nodes import (
+    BinaryExpressionNode,
+    ExpressionNode,
+    LiteralNode,
+    LiteralFltNode,
+    LiteralIdentNode,
+    LiteralIntNode,
+    ProgramNode,
+    StatementNode
+)
+from .tokens import (
+    tokens_isfloat,
+    tokens_isgeneric,
+    tokens_isinteger,
+    BasicLexer,
+    Lexer,
+    Token,
+    TokenType
+)
 
-TreeNodeMapping: typing.Mapping[str, type["TreeNode"]] = {}
+P = typing.ParamSpec("P")
+ParseNextProtocol = typing.Callable[P, StatementNode | LiteralNode]
 
 
-def register_node_type(cls: type["TreeNode"]) -> type["TreeNode"]:
-    """Maps node types for parse lookup."""
+class Parser(typing.Protocol):
+    """
+    Parses input tokens from lexical analysis into
+    traversable data.
+    """
 
-    TreeNodeMapping[cls.__name__] = cls #type: ignore[index]
-    return cls
-
-
-class TreeNode(typing.Protocol):
-    """Abstract Syntax Tree (AST) node."""
-
-    def __init__(self, token: Token, parent: typing.Self | None = None):
-        """Initialize an AST node."""
+    lexer:   Lexer
+    program: ProgramNode
 
     @property
-    def token(self) -> Token:
-        """Underlying token."""
-
-    @property
-    def ttype(self) -> TokenType:
-        """Underlying token type."""
-
-    @property
-    def symbol(self) -> Symbol:
-        """Underlying parsed value."""
-
-    @abc.abstractmethod
-    def add_child(self, node: typing.Self) -> None:
-        """Add child node to this node."""
-
-    @abc.abstractmethod
-    def get_children(self) -> typing.Sequence[typing.Self]:
-        """Get the child nodes of this node."""
-
-    @abc.abstractmethod
-    def get_parent(self) -> typing.Self:
-        """Get the parent node to this node."""
-
-    @abc.abstractmethod
-    def set_parent(self, node: typing.Self) -> None:
-        """Set the parent node of this node."""
-
-    @classmethod
-    @abc.abstractmethod
-    def token_isviable(cls, token: Token) -> bool:
+    def current(self) -> Token:
         """
-        Given token is an eligible candidate for
-        this node type.
+        Get the current token being observed.
         """
 
-
-class BasicNode(TreeNode):
-    parent:   TreeNode | None
-    children: list[TreeNode]
-    tk:       Token
-
-    # Eligible token types.
-    tk_viable_types: tuple[TokenType, ...] = ()
-
-    def __init__(self, token: Token, parent: TreeNode | None = None):
-        self.parent = parent
-        self.children = []
-        self.tk = token
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.token!r})"
+    @property
+    def previous(self) -> Token:
+        """Get the last token requested."""
 
     @property
-    def token(self):
-        return self.tk
+    def next(self) -> Token:
+        """Get the next token to be parsed."""
 
-    @property
-    def ttype(self):
-        return self.tk.ttype
+    def digest(self) -> typing.Mapping:
+        """
+        Consume the parsed tree into a mapping.
+        """
 
-    @property
-    def symbol(self):
-        return self.tk.symbol
+    def done(self) -> bool:
+        """
+        The lexer has been exhausted of all
+        available tokens.
+        """
 
-    def add_child(self, node: typing.Self):
-        self.children.append(node)
+    def expect(self, ttype: TokenType) -> None:
+        """
+        Looks ahead for the next available token,
+        validating if the next token is the
+        expected `TokenType`.
 
-    def get_children(self):
-        return self.children
+        This function returns `None` but raises an
+        error if the next `TokenType` is not the
+        expected.
+        """
 
-    def get_parent(self):
-        return self.parent
+    def parse(self) -> None:
+        """
+        Parses the tokens provided by the lexer.
+        """
 
-    def set_parent(self, node: typing.Self):
-        self.parent = node
-
-    @classmethod
-    def token_isviable(cls, token: Token):
-        return token.ttype in cls.tk_viable_types
-
-
-class ErrorNode(BasicNode):
-    """
-    Represents a node where there was an error in
-    parsing.
-    """
-
-
-class ValueNode(BasicNode):
-    """
-    A node which requires no arguments, but
-    instead represents a value.
-    """
+    def update(self) -> None:
+        """
+        Requests the next token from the lexer,
+        rotating the token history.
+        """
 
 
-class NumericNode(ValueNode):
-    """A node representing a numeric value."""
+class TreeParser(Parser):
 
-
-@register_node_type
-class NumericFltNode(NumericNode):
-    """
-    A node representing a floating point
-    numerical value.
-    """
-
-
-@register_node_type
-class NumericIntNode(NumericNode):
-    """A node representing an integer value."""
-
-    tk_viable_types = (
-        TokenType.NumBin,
-        TokenType.NumInt,
-        TokenType.NumHex,
-        TokenType.NumOct)
-
-
-@register_node_type
-class BinaryOperNode(BasicNode):
-    """
-    Represents an operation which takes two
-    arguments.
-
-    Arguments are consumed in this node as child
-    nodes; a left and a right.
-    """
-
-    tk_viable_types = (
-        TokenType.OperAddressOf,
-        TokenType.OperAsk,
-        TokenType.OperAssign,
-        TokenType.OperBtAnd,
-        TokenType.OperBtOr,
-        TokenType.OperBtXor,
-        TokenType.OperDecrement,
-        TokenType.OperDelete,
-        TokenType.OperDivide,
-        TokenType.OperDivFloor,
-        TokenType.OperIncrement,
-        TokenType.OperLgAnd,
-        TokenType.OperLgNot,
-        TokenType.OperLgOr,
-        TokenType.OperLgGt,
-        TokenType.OperLgGte,
-        TokenType.OperLgLt,
-        TokenType.OperLgLte,
-        TokenType.OperMinus,
-        TokenType.OperMinusEq,
-        TokenType.OperModulus,
-        TokenType.OperPlus,
-        TokenType.OperPlusEq,
-        TokenType.OperPower,
-        TokenType.OperPtrAttr,
-        TokenType.OperStamp,
-        TokenType.OperStar
-    )
-
-    # x + y; // Arithmetic operations.
-    # x = y; // Assignment operations.
-    # x : int; // name declaration.
-    def __init__(self, token: Token, parent: TreeNode | None = None):
-        super().__init__(token, parent)
-        self.children = [dummy_node()]*2
-
-    @property
-    def left(self):
-        return self.children[0]
-
-    @left.setter
-    def left(self, node: TreeNode):
-        node.set_parent(self)
-        self.children[0] = node
-
-    @property
-    def right(self):
-        return self.children[1]
-
-    @right.setter
-    def right(self, node: TreeNode):
-        node.set_parent(self)
-        self.children[1] = node
-
-
-@register_node_type
-class KeywordNode(BinaryOperNode):
-    """
-    Represents the relationship between this
-    node and one or two other nodes as a built-in
-    feature to the language being parsed.
-    """
-
-    # Overriding types from Binary Operator Node.
-    tk_viable_types = ( #type: ignore[assignment]
-        TokenType.KwdAs,
-        TokenType.KwdBreak,
-        TokenType.KwdCatch,
-        TokenType.KwdContinue,
-        TokenType.KwdConstant,
-        TokenType.KwdClass,
-        TokenType.KwdDefault,
-        TokenType.KwdDelete,
-        TokenType.KwdElse,
-        TokenType.KwdFor,
-        TokenType.KwdFrom,
-        TokenType.KwdFunc,
-        TokenType.KwdIf,
-        TokenType.KwdImport,
-        TokenType.KwdInclude,
-        TokenType.KwdNew,
-        TokenType.KwdNil,
-        TokenType.KwdNull,
-        TokenType.KwdPanic,
-        TokenType.KwdProto,
-        TokenType.KwdRaise,
-        TokenType.KwdReturn,
-        TokenType.KwdStatic,
-        TokenType.KwdTry,
-        TokenType.KwdWhile,
-        TokenType.KwdWith
-    )
-
-
-class TreeParser:
-    nodes:            typing.Sequence[TreeNode]
-    nodes_history:    tuple[TreeNode, TreeNode, TreeNode]
-    lexer:            Lexer
+    # Used as the 'token history' much like the
+    # ribbon used in olf-fashioned type writers.
+    lexer_ribbon: tuple[Token, Token, Token]
 
     def __init__(self, lexer: Lexer):
-        self.lexer = lexer
-        self.nodes = []
-
-        # Prepopulating token history with
-        # junk nodes.
-        self.nodes_history = tuple([dummy_node()]*3) #type: ignore[assignment]
+        self.lexer        = lexer
+        self.lexer_ribbon = (None, lexer.next(), lexer.next())
+        self.program      = ProgramNode()
 
     @property
-    def current(self):
-        """The node currently being parsed."""
-
-        return self.nodes_history[-1]
+    def current(self) -> Token:
+        return self.lexer_ribbon[1]
+    
+    @property
+    def next(self) -> Token:
+        return self.lexer_ribbon[-1]
 
     @property
-    def last(self):
-        """
-        The last node parsed, right before the
-        `previous` node.
-        """
+    def previous(self) -> Token:
+        return self.lexer_ribbon[0]
 
-        return self.nodes_history[-3]
-
-    @property
-    def previous(self):
-        """
-        The last node to be parsed, right before
-        the `current` node.
-        """
-
-        return self.nodes_history[-2]
+    def digest(self) -> typing.Mapping:
+        return self.program.reduce()
 
     def done(self):
-        """
-        Parsing has reached end of lexer tokens.
-        """
+        return self.current.symbol in (b"EOF", b"EOL")
 
-        return self.lexer.end()
-
-    def parse(self):
-        """
-        Parse the nodes into from lexer into
-        tree.
-        """
-
-        while not self.done():
-            self.update()
-
-            if not isinstance(self.current, ErrorNode):
-                # TODO: implment parsing.
-                print(repr(self.current))
-                continue
-
-            token = self.current.token
-            ttype = self.current.ttype
-            if self.current.ttype is TokenType.NameGeneric:
-                raise ParserUnknownNameError(f"Unknown name '{token!s}'.")
-            else:
-                raise ParserUnsupportedError(f"Unsupported type {ttype.name!r}")
+    def expect(self, ttype: TokenType):
+        if self.current.ttype is not ttype:
+            got = self.current.ttype
+            msg = f"Unexpected token type. Expected {ttype.name!r} got {got.name!r}"
+            raise TypeError(msg)
 
     def update(self):
+        self.lexer_ribbon = (*self.lexer_ribbon[-2:], self.lexer.next())
+
+    # Parsing needs to happen at an order of
+    # most precedent. (Order of Precedence).
+    # Order of precedence dictates in what order
+    # of recursion calls are made; where the
+    # highest priority is called last, and the
+    # lowest first.
+    def parse(self):
+        while not self.done():
+            self.program.add(self.parse_stmt())
+            self.update()
+
+    # OoP stmt 0
+    def parse_stmt(self) -> StatementNode:
         """
-        Gets the next `TreeNode` from the lexer
-        and updates the node history with that
-        node.
+        Parses a `StatementNode` from the
+        proceeding tokens.
         """
 
-        node = node_from_token(self.lexer.next())
-        self.nodes_history = (*self.nodes_history[-2:], node)
+        # No addtional expression types defined at
+        # this moment.
+        return self.parse_expr()
 
+    # OoP stmt 1
+    def parse_expr(self) -> ExpressionNode:
+        """
+        Parses an `ExpressionNode` from the
+        proceeding tokens.
+        """
 
-def dummy_node() -> TreeNode:
-    """Creates an instance of an empty node."""
+        # The current lightest expression is the
+        # additive expression.
+        return self.parse_expr_additive()
 
-    return BasicNode(Token(-1, -1, bytearray()))
+    def parse_expr_binary(
+        self,
+        expected_ops: tuple[TokenType, ...],
+        next_parser: ParseNextProtocol | None = None):
+        """
+        Parses some binary expression from the
+        proceeding tokens.
+        """
+    
+        if not next_parser:
+            next_parser = self.parse_expr_primative
 
+        left = next_parser()
 
-def node_from_token(token: Token) -> TreeNode:
-    """
-    Creates a instance of some node from a given
-    token.
-    """
+        while self.current.ttype in expected_ops:
+            op = self.current
+            self.update()
+            right = next_parser()
+            left  = BinaryExpressionNode(op, left, right)
 
-    node = ErrorNode(token)
+        return left
 
-    for ntype in TreeNodeMapping.values():
-        if not ntype.token_isviable(token):
-            continue
-        node = ntype(token) #type: ignore[assignment]
+    # OoP stmt 1 expr 0
+    def parse_expr_primative(self) -> LiteralNode:
+        """
+        Parses a primitive node from the next
+        lexer tokens.
+        """
 
-    return node
+        tk = self.current
+        self.update()
+        if tokens_isgeneric(tk):
+            return LiteralIdentNode(tk)
+        elif tokens_isfloat(tk):
+            return LiteralFltNode(tk)
+        elif tokens_isinteger(tk):
+            return LiteralIntNode(tk)
+        elif tk.ttype is TokenType.PuncLParen:
+            expr = self.parse_expr()
+            self.expect(TokenType.PuncRParen)
+            self.update()
+            return expr
+        else:
+            loc = (
+                f"(lineno: {tk.lineno}, col: {tk.column})"
+            )
+            symbol = tk.symbol.decode()
+            raise TypeError(f"Unexpected token at {loc}. Got {symbol!r}")
 
+    # OoP stmt 1 expr 1
+    def parse_expr_multiplicative(self):
+        """
+        Parses an additive expression from the
+        next lexer tokens. Additive being an
+        expression, from left to right produces
+        a statement that multiplies, divides or
+        gets the remainder from two objects.
+        (e.g. "x + y")
+        """
 
-class ParserError(Exception):
-    """
-    Generic exception for when something goes
-    wrong while building AST.
-    """
+        ops = (
+            TokenType.OperDivide,
+            TokenType.OperDivFloor,
+            TokenType.OperModulus,
+            TokenType.OperStar,
+            TokenType.OperPower
+        )
 
+        return self.parse_expr_binary(ops)
 
-class ParserUnknownNameError(ParserError):
-    """
-    Raised when a name token is invalid or
-    unknown.
-    """
+    # OoP stmt 1 expr 2
+    def parse_expr_additive(self):
+        """
+        Parses an additive expression from the
+        next lexer tokens. Additive being an
+        expression, from left to right produces
+        a statement that adds or subtracts two
+        objects together. (e.g. "x + y")
+        """
 
+        # Multiplicative expressions are currently
+        # the next lightest after additive. Will
+        # try to parse a binary operation first
+        # which produces this type of expression
+        # for the left child node.
+        nexter = self.parse_expr_multiplicative
+        ops    = (TokenType.OperPlus, TokenType.OperMinus)
 
-class ParserUnsupportedError(ParserError):
-    """
-    Raised when the token is not a supported type.
-    """
+        return self.parse_expr_binary(ops, nexter)
 
 
 if __name__ == "__main__":
-    with open("tests/test_parser.vxn", "rb") as fd:
-        tp = TreeParser(BasicLexer(fd))
-        tp.parse()
+    tp = TreeParser(BasicLexer(b"55 // (4 + 1 )"))
+    tp.parse()
+    digest = tp.digest()
