@@ -244,6 +244,7 @@ class TreeParser(Parser):
 
 
 if __name__ == "__main__":
-    with open("tests/test_parser.vxn", "rb") as fd:
-        tp = TreeParser(BasicLexer(fd))
-        tp.parse()
+    tp = TreeParser(BasicLexer(b"55 // (4 + 1 )"))
+    tp.parse()
+    digest = tp.digest()
+    print(ProgramNode.expand(digest))
