@@ -247,4 +247,3 @@ if __name__ == "__main__":
     tp = TreeParser(BasicLexer(b"55 // (4 + 1 )"))
     tp.parse()
     digest = tp.digest()
-    print(ProgramNode.expand(digest))

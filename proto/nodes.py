@@ -12,13 +12,6 @@ class TreeNode(typing.Protocol):
     def reduce(self) -> typing.Mapping:
         """Digest this node into a mapping."""
 
-    @classmethod
-    def expand(cls, mapping: typing.Mapping) -> typing.Self:
-        """
-        Create an instance of this node type from
-        a mapping.
-        """
-
 
 class ProgramNode(TreeNode):
     """Top most node in an AST."""
@@ -30,7 +23,7 @@ class ProgramNode(TreeNode):
 
     def reduce(self) -> typing.Mapping:
         return {"program": [node.reduce() for node in self.body]}
-
+    
     def add(self, node: TreeNode):
         """Adds a node to this program body."""
 
@@ -47,9 +40,8 @@ class StatementNode(TreeNode):
     def __init__(self, kind: TokenType) -> None:
         self.kind = kind
 
-    @classmethod
-    def expand(cls, mapping: typing.Mapping):
-        return cls(**mapping)
+    def reduce(self) -> typing.Mapping:
+        return {"kind": self.kind.name}
 
 
 class ExpressionNode(StatementNode):
@@ -89,8 +81,7 @@ class BinaryExpressionNode(ExpressionNode):
         return f"{self.__class__.__name__}{info}"
 
     def reduce(self) -> typing.Mapping:
-        return {
-            "kind": self.kind,
+        return super().reduce() | {
             "operator": self.operator.symbol,
             "lineno": self.operator.lineno,
             "column": self.operator.column,
@@ -112,8 +103,8 @@ class LiteralNode(ExpressionNode):
         return f"{self.__class__.__name__}[value: {self.value!r}]"
 
     def reduce(self) -> typing.Mapping:
-        return {
-            "kind": self.kind,
+        return super().reduce() | {
+            "kind": self.kind.name,
             "value": self.value.symbol,
             "lineno": self.value.lineno,
             "column": self.value.column
