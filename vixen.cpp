@@ -132,7 +132,7 @@ int main(int argc, const char* argv[]) {
 
         std::cout << "Token";
         if (token.find('\'') == SIZE_T_MAX)
-            std::cout << "'" << token << "']";
+            std::cout << "['" << token << "']";
         else
             std::cout << "[\"" << token << "\"]";
 
