@@ -30,8 +30,15 @@ void print_error(VixenNamespace vxn, const std::string message) {
     std::cerr << vxn.exec << ": error: " << message << std::endl;
 }
 
-void panic(VixenNamespace vxn, const std::string message, int exit_code = 1) {
+void panic(
+    VixenNamespace vxn,
+    const std::string message,
+    int exit_code = 1,
+    bool show_help = false) {
+
     print_error(vxn, message);
+    if (show_help)
+        usage(vxn);
     exit(exit_code);
 }
 
@@ -105,40 +112,39 @@ void parse(VixenNamespace& vxn, int argc, const char* argv[]) {
     }
 
     if (!vxn.file.length() && !vxn.cinput.length())
-        panic(vxn, "No input was provided.");
+        panic(vxn, "No input was provided.", 1, true);
     else if (vxn.file.length() && vxn.cinput.length())
         panic(vxn, "Cannot handle more than one input source.");
 }
 
 int main(int argc, const char* argv[]) {
-    vixen::symbols::Lexer lexer;
+    vixen::tokens::Lexer lexer;
     VixenNamespace vxn;
-    int lineno, column;
-    std::string token;
-     parse(vxn, argc, argv);
+    parse(vxn, argc, argv);
 
     if (vxn.file.length()) {
         ifstream file(vxn.file);
         if (!file.is_open())
             panic(vxn, "Cannot open file '" + vxn.file + "'.");
-        lexer = vixen::symbols::Lexer(file);
+        lexer = vixen::tokens::Lexer(file);
         file.close();
     } else {
-        lexer = vixen::symbols::Lexer(vxn.cinput);
+        lexer = vixen::tokens::Lexer(vxn.cinput);
     }
 
+    vixen::tokens::Token token;
     while (!lexer.end()) {
-        std::tie(lineno, column, token) = lexer.next();
+        token = lexer.next_token();
 
-        std::cout << "Token";
-        if (token.find('\'') == SIZE_T_MAX)
-            std::cout << "['" << token << "']";
-        else
-            std::cout << "[\"" << token << "\"]";
+        // std::cout << "Token";
+        // if (token.find('\'') == SIZE_T_MAX)
+        //     std::cout << "['" << token << "']";
+        // else
+        //     std::cout << "[\"" << token << "\"]";
 
-        std::cout
-            << "@(lineno: " << lineno << ", col: " << column << ")"
-            << std::endl;
+        // std::cout
+        //     << "@(lineno: " << lineno << ", col: " << column << ")"
+        //     << std::endl;
     }
 
     return 0;
