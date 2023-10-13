@@ -194,13 +194,13 @@ class Lexer : SymbolParser<TRIPLET(std::string)> {
             std::string symbol("");
             uint column = this->column();
             uint lineno = this->column();
-            char head;
+            char head   = this->head();
 
             while (1) {
-                head = this->head();
                 symbol += head;
                 this->advance();
 
+                head = this->head();
                 if (char_isnoparse(head))
                     break;
                 if (char_iscomment(head))
@@ -224,13 +224,13 @@ class Lexer : SymbolParser<TRIPLET(std::string)> {
             std::string symbol("");
             uint column = this->column();
             uint lineno = this->column();
-            char head;
+            char head   = this->head();
 
             while (1) {
-                head = this->head();
                 symbol += head;
                 this->advance();
 
+                head = this->head();
                 if (char_isnoparse(head))
                     break;
                 if (char_iscomment(head))
@@ -251,13 +251,13 @@ class Lexer : SymbolParser<TRIPLET(std::string)> {
             std::string symbol("");
             uint column = this->column();
             uint lineno = this->column();
-            char head;
+            char head   = this->head();
 
             while (1) {
-                head = this->head();
                 symbol += head;
                 this->advance();
 
+                head = this->head();
                 if (!this->string_parsing) {
                     if (char_isnoparse(head))
                         break;
@@ -283,10 +283,13 @@ class Lexer : SymbolParser<TRIPLET(std::string)> {
                     if (symbol_isstrsym(symbol) && !char_isstrchar(head))
                         break;
 
+                    if (char_istermchar((char)symbol[0]))
+                        break;
+
                 // If string parsing, ignore whatever
                 // character might come next as it is
                 // most likely being escaped.
-                } else if (strcmp("\\", (char*)symbol.back()) == 0)
+                } else if ('\\' == symbol.back())
                     continue;
 
                 // If future char sequence is the
@@ -465,7 +468,8 @@ bool symbol_isvalidpunc(std::string& symbol, char next) {
 }
 
 int main(void) {
-    Lexer lexer("55 + 45;");
+    // Still not parsing correctly.
+    Lexer lexer("55 + 45;x;'Hallo'; x: int = 0; x++;");
     TRIPLET(std::string) token;
 
     while (!lexer.end()) {

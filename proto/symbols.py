@@ -325,6 +325,9 @@ class BasicSymbolParser(SymbolParser[T]):
                 if symbol_isstrsym(symbol) and not char_isstrchar(self.head()):
                     break
 
+                if char_istermchar(symbol[0]):
+                    break
+
             # If string parsing, ignore whatever
             # character might come next as it is
             # most likely being escaped.
@@ -516,6 +519,9 @@ def main():
     for st, sp in zip(symbols_tested, symbols_parsed):
         print(st, sp, sep="  \t\t")
         assert st == sp, f"Received invalid token {sp!r}."
+
+    for symbol in BasicSymbolParser("55 + 45;x;'Hallo'; x: int = 0; x++;"):
+        print(symbol)
 
     return 0
 
