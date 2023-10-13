@@ -99,7 +99,7 @@ void parse(VixenNamespace& vxn, int argc, const char* argv[]) {
             vxn.file = arg;
             continue;
         } else if (vxn.file.length()) {
-            panic(vxn, "Unknown argument '" + std::string(arg) + "'.");
+            panic(vxn, "Unknown argument: '" + std::string(arg) + "'.");
         }
     }
 
