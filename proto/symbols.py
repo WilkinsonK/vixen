@@ -520,9 +520,6 @@ def main():
         print(st, sp, sep="  \t\t")
         assert st == sp, f"Received invalid token {sp!r}."
 
-    for symbol in BasicSymbolParser("55 + 45;x;'Hallo'; x: int = 0; x++;"):
-        print(symbol)
-
     return 0
 
 
