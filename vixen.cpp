@@ -137,7 +137,7 @@ int main(int argc, const char* argv[]) {
             std::cout << "[\"" << token << "\"]";
 
         std::cout
-            << "@(lineno: " << lineno << "col: " << column << ")"
+            << "@(lineno: " << lineno << ", col: " << column << ")"
             << std::endl;
     }
 
