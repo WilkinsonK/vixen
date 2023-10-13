@@ -1,7 +1,6 @@
 #include <stdarg.h>
 #include <stdio.h>
-
-#include "vixen.h"
+#include <stdlib.h>
 
 // Writes the provided message to stderr and then
 // exits.
