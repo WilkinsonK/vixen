@@ -134,7 +134,7 @@ int main(int argc, const char* argv[]) {
 
     vixen::tokens::Token token;
     while (!lexer.end()) {
-        token = lexer.next_token();
+        token = lexer.next();
         std::cout << token << std::endl;
     }
 

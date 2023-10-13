@@ -182,12 +182,13 @@ namespace vixen::symbols {
             // Character at read head.
             virtual char head() = 0;
             // Parse next symbol.
-            virtual T    next() = 0;
+            virtual T next() = 0;
     };
 
     // Parses generic symbols into a tuple of metadata
     // `(line_number, start_column, symbol)`.
-    class BasicSymbolParser : public SymbolParser<TRIPLET(Symbol)> {
+    template <typename T>
+    class BasicSymbolParser : public SymbolParser<T> {
         protected:
             std::string data;
             uint        dimension_line;
@@ -296,7 +297,7 @@ namespace vixen::symbols {
                 return look == last;
             }
 
-            TRIPLET(Symbol) next() {
+            TRIPLET(Symbol) next_raw() {
                 // Advance past all whitespace and chars
                 // considered invalid for parsing.
                 // This includes characters after a comment

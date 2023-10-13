@@ -282,13 +282,13 @@ namespace vixen::tokens {
         return false;
     }
 
-    class Lexer : public vixen::symbols::BasicSymbolParser {
+    class Lexer : public vixen::symbols::BasicSymbolParser<Token> {
         public:
-            Lexer() : vixen::symbols::BasicSymbolParser() {}
-            Lexer(std::string& data) : vixen::symbols::BasicSymbolParser(data) {}
-            Lexer(std::ifstream& file, const std::string& filename = "") : vixen::symbols::BasicSymbolParser(file, filename) {}
+            Lexer() : vixen::symbols::BasicSymbolParser<Token>() {}
+            Lexer(std::string& data) : vixen::symbols::BasicSymbolParser<Token>(data) {}
+            Lexer(std::ifstream& file, const std::string& filename = "") : vixen::symbols::BasicSymbolParser<Token>(file, filename) {}
 
-            Token next_token() {
+            Token next() {
                 Lineno lineno;
                 Column column;
                 Symbol symbol;
@@ -296,7 +296,7 @@ namespace vixen::tokens {
                 std::tie(
                     lineno,
                     column,
-                    symbol) = vixen::symbols::BasicSymbolParser::next();
+                    symbol) = vixen::symbols::BasicSymbolParser<Token>::next_raw();
 
                 return Token(lineno, column, symbol, this->file);
             }
