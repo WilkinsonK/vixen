@@ -426,7 +426,6 @@ def symbol_isnumeric(symbol: bytearray):
             if ch not in DIGIT_CHARS + DIGIT_CHARS_EXT:
                 return False
 
-        # If parsing for 
     return (symbol.count(b".") < 2)
 
 
