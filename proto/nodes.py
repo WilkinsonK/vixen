@@ -1,3 +1,15 @@
+"""
+nodes.py
+---
+
+Author: Keenan W. Wilkinson
+Date: 7th Oct 2023
+---
+
+Nodes are the basic elements of an AST which compose the phrases that
+tokens from lexical analysis describe.
+"""
+
 import typing
 
 from .tokens import Token, TokenType
