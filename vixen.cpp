@@ -126,7 +126,7 @@ int main(int argc, const char* argv[]) {
         ifstream file(vxn.file);
         if (!file.is_open())
             panic(vxn, "Cannot open file '" + vxn.file + "'.");
-        lexer = vixen::tokens::Lexer(file);
+        lexer = vixen::tokens::Lexer(file, vxn.file);
         file.close();
     } else {
         lexer = vixen::tokens::Lexer(vxn.cinput);
@@ -135,16 +135,7 @@ int main(int argc, const char* argv[]) {
     vixen::tokens::Token token;
     while (!lexer.end()) {
         token = lexer.next_token();
-
-        // std::cout << "Token";
-        // if (token.find('\'') == SIZE_T_MAX)
-        //     std::cout << "['" << token << "']";
-        // else
-        //     std::cout << "[\"" << token << "\"]";
-
-        // std::cout
-        //     << "@(lineno: " << lineno << ", col: " << column << ")"
-        //     << std::endl;
+        std::cout << token << std::endl;
     }
 
     return 0;
