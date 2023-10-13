@@ -11,7 +11,7 @@ source_files = [ 'vixen.cpp' ]
 # Builds libvixen-dev.
 vxn_lib = library(
     'vixen-dev',
-    'include/vixen.h',
+    'include/vixen.hpp',
     include_directories : include_dirs,
     soversion : '0.0.0')
 
