@@ -1,3 +1,4 @@
+#pragma once
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -7,7 +8,11 @@
 using namespace std;
 
 #define MAX_SIZET (size_t)(-1)
-#define TRIPLET(T) std::tuple<uint, uint, T>
+
+typedef std::string Symbol;
+typedef uint Column;
+typedef uint Lineno;
+#define TRIPLET(T) std::tuple<Lineno, Column, T>
 
 namespace vixen::symbols {
     bool char_in_string(char, std::string);
@@ -47,7 +52,7 @@ namespace vixen::symbols {
 
     // Parses generic symbols into a tuple of metadata
     // `(line_number, start_column, symbol)`.
-    class Lexer : SymbolParser<TRIPLET(std::string)> {
+    class BasicSymbolParser : public SymbolParser<TRIPLET(Symbol)> {
         private:
             std::string data;
             uint        dimension_line;
@@ -58,9 +63,9 @@ namespace vixen::symbols {
             std::string symbol_ribbon[3];
 
         public:
-            Lexer() {}
+            BasicSymbolParser() {}
 
-            Lexer(const std::string data) {
+            BasicSymbolParser(const std::string data) {
                 this->data           = data;
                 this->dimension_line = 1;
                 this->last_line_at   = 0;
@@ -68,7 +73,7 @@ namespace vixen::symbols {
                 this->string_parsing = false;
             }
 
-            Lexer(std::ifstream& file) {
+            BasicSymbolParser(std::ifstream& file) {
                 std::string buf;
                 while (std::getline(file, buf))
                     this->data.append(buf + "\n");
@@ -155,7 +160,7 @@ namespace vixen::symbols {
                 return look == last;
             }
 
-            TRIPLET(std::string) next() {
+            TRIPLET(Symbol) next() {
                 // Advance past all whitespace and chars
                 // considered invalid for parsing.
                 // This includes characters after a comment
@@ -194,7 +199,7 @@ namespace vixen::symbols {
             }
 
             // Parse next name symbol.
-            TRIPLET(std::string) next_name() {
+            TRIPLET(Symbol) next_name() {
                 std::string symbol("");
                 uint column = this->column();
                 uint lineno = this->column();
@@ -224,7 +229,7 @@ namespace vixen::symbols {
             }
 
             // Parse next numeric symbol.
-            TRIPLET(std::string) next_numeric() {
+            TRIPLET(Symbol) next_numeric() {
                 std::string symbol("");
                 uint column = this->column();
                 uint lineno = this->column();
@@ -251,7 +256,7 @@ namespace vixen::symbols {
             }
 
             // Parse next punctuation symbol.
-            TRIPLET(std::string) next_punc() {
+            TRIPLET(Symbol) next_punc() {
                 std::string symbol("");
                 uint column = this->column();
                 uint lineno = this->column();
