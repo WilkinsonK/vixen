@@ -47,7 +47,7 @@ class SymbolParser {
 // Parses generic symbols into a tuple of metadata
 // `(line_number, start_column, symbol)`.
 class Lexer : SymbolParser<TRIPLET(std::string)> {
-    protected:
+    private:
         std::string data;
         uint        dimension_line;
         std::string file;
