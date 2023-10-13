@@ -53,7 +53,7 @@ namespace vixen::symbols {
     // Parses generic symbols into a tuple of metadata
     // `(line_number, start_column, symbol)`.
     class BasicSymbolParser : public SymbolParser<TRIPLET(Symbol)> {
-        private:
+        protected:
             std::string data;
             uint        dimension_line;
             std::string file;
@@ -73,7 +73,8 @@ namespace vixen::symbols {
                 this->string_parsing = false;
             }
 
-            BasicSymbolParser(std::ifstream& file) {
+            BasicSymbolParser(std::ifstream& file, const std::string& filename = "") {
+                this->file = filename;
                 std::string buf;
                 while (std::getline(file, buf))
                     this->data.append(buf + "\n");
@@ -202,7 +203,7 @@ namespace vixen::symbols {
             TRIPLET(Symbol) next_name() {
                 std::string symbol("");
                 uint column = this->column();
-                uint lineno = this->column();
+                uint lineno = this->lineno();
                 char head   = this->head();
 
                 while (1) {
@@ -232,7 +233,7 @@ namespace vixen::symbols {
             TRIPLET(Symbol) next_numeric() {
                 std::string symbol("");
                 uint column = this->column();
-                uint lineno = this->column();
+                uint lineno = this->lineno();
                 char head   = this->head();
 
                 while (1) {
@@ -259,7 +260,7 @@ namespace vixen::symbols {
             TRIPLET(Symbol) next_punc() {
                 std::string symbol("");
                 uint column = this->column();
-                uint lineno = this->column();
+                uint lineno = this->lineno();
                 char head   = this->head();
 
                 while (1) {
