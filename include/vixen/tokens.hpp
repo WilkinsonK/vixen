@@ -240,6 +240,23 @@ namespace vixen::tokens {
                 else
                     this->type = tokens_find_gentype(symbol);
             }
+        private:
+            friend std::ostream& operator<<(std::ostream& os, const Token& token) {
+                os << "Token";
+                if (token.symbol.find('\'') == SIZE_T_MAX)
+                    os << "['" << token.symbol << "']";
+                else
+                    os << "[\"" << token.symbol << "\"]";
+
+                os << "@(";
+                os << "lineno: " << token.lineno << ", ";
+                os << "column: " << token.column;
+                if (token.file.length() > 0)
+                    os << ", file: '" << token.file << "'";
+                os << ")";
+
+                return os;
+            }
     };
 
     bool tokens_isfloat(Token token) {
@@ -269,8 +286,7 @@ namespace vixen::tokens {
         public:
             Lexer() : vixen::symbols::BasicSymbolParser() {}
             Lexer(std::string& data) : vixen::symbols::BasicSymbolParser(data) {}
-            Lexer(std::ifstream& file) : vixen::symbols::BasicSymbolParser(file) {}
-
+            Lexer(std::ifstream& file, const std::string& filename = "") : vixen::symbols::BasicSymbolParser(file, filename) {}
 
             Token next_token() {
                 Lineno lineno;
@@ -282,7 +298,7 @@ namespace vixen::tokens {
                     column,
                     symbol) = vixen::symbols::BasicSymbolParser::next();
 
-                return Token(lineno, column, symbol);
+                return Token(lineno, column, symbol, this->file);
             }
     };
 };
