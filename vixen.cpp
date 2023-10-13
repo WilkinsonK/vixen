@@ -6,7 +6,7 @@
 using namespace std;
 
 #define VIXEN_NAME    "Vixen"
-#define VIXEN_VERSION "0.3.0"
+#define VIXEN_VERSION "0.4.2"
 
 struct VixenNamespace {
     std::string cinput;
