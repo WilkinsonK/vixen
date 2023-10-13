@@ -141,14 +141,15 @@ class Lexer : SymbolParser<TRIPLET(std::string)> {
         // Get a 'slice' of `head` length from
         // data stream relative to read head.
         std::string lookahead(uint head) {
-            return this->data.substr(this->read_head,this->read_head+head);
+            return this->data.substr(this->read_head, head);
         }
 
         // The last symbol parsed is equal to the
         // lookahead slice.
         bool lookahead_matchlast() {
             std::string last = this->last_symbol();
-            return this->lookahead(last.length()) == last;
+            std::string look = this->lookahead(last.length());
+            return look == last;
         }
 
         TRIPLET(std::string) next() {
@@ -307,6 +308,9 @@ class Lexer : SymbolParser<TRIPLET(std::string)> {
                     break;
             }
 
+            if (symbol_isstrsym(symbol))
+                this->string_parsing = !(this->string_parsing);
+
             return {lineno, column, symbol};
         }
 };
@@ -429,7 +433,7 @@ bool symbol_isstrsym(std::string& symbol) {
         return false;
 
     for (std::string sym : stringsyms)
-        if (sym.compare(symbol) == 0)
+        if (sym == symbol)
             return true;
 
     return false;
@@ -470,13 +474,18 @@ bool symbol_isvalidpunc(std::string& symbol, char next) {
 int main(void) {
     std::ifstream file("tests/test_symbols.vxn");
     Lexer lexer(file);
-    file.close();
-    TRIPLET(std::string) token;
+    uint lineno, column;
+    std::string token;
 
     while (!lexer.end()) {
-        token = lexer.next();
-        std::cout << "Token: " << std::get<2>(token) << std::endl;
+        std::tie(lineno, column, token) = lexer.next();
+        std::cout
+            << "Token['" << token << "']"
+            << "@(lineno: " << lineno << ", col: " << column << ")"
+            << std::endl;
     }
+
+    file.close();
 
     return 0;
 }
