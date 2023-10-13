@@ -58,6 +58,8 @@ namespace vixen::symbols {
             std::string symbol_ribbon[3];
 
         public:
+            Lexer() {}
+
             Lexer(const std::string data) {
                 this->data           = data;
                 this->dimension_line = 1;
