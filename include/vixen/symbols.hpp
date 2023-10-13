@@ -186,7 +186,7 @@ namespace vixen::symbols {
                     token = this->next_name();
                 } else if (char_isdigitchar(this->head())) {
                     token = this->next_numeric();
-                } else if (char_isdigitsep(this->head())) {
+                } else if (char_isdigitsep(this->head()) && char_isdigitchar(this->lookahead(2)[1])) {
                     token = this->next_numeric();
                 } else {
                     token = this->next_punc();
@@ -279,7 +279,7 @@ namespace vixen::symbols {
                             break;
 
                         // Gratuitious most likely.
-                        if (char_isgroupchar(head))
+                        if (char_isgroupchar(symbol[0]))
                             break;
 
                         // Names cannot exist in puncutation.
