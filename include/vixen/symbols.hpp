@@ -15,26 +15,161 @@ typedef uint Lineno;
 #define TRIPLET(T) std::tuple<Lineno, Column, T>
 
 namespace vixen::symbols {
-    bool char_in_string(char, std::string);
-    bool char_iscomment(char);
-    bool char_isdigitchar(char);
-    bool char_isdigitext(char);
-    bool char_isdigitsep(char);
-    bool char_isgroupchar(char);
-    bool char_isnamechar(char);
-    bool char_isnewline(char);
-    bool char_isnoparse(char);
-    bool char_ispuncchar(char);
-    bool char_isstrchar(char);
-    bool char_istermchar(char);
-    bool symbol_isname(std::string&);
-    bool symbol_isnumeric(std::string&);
-    bool symbol_ispunc(std::string&);
-    bool symbol_isstrsym(std::string&);
-    bool symbol_istermed(std::string&, char);
-    bool symbol_isvalidname(std::string&, char);
-    bool symbol_isvalidnum(std::string&, char);
-    bool symbol_isvalidpunc(std::string&, char);
+    bool char_in_string(char ch, std::string str) {
+        return str.find(ch) != MAX_SIZET;
+    }
+
+    bool char_iscomment(char ch) {
+        return char_in_string(ch, "#");
+    }
+
+    bool char_isdigitchar(char ch) {
+        return char_in_string(ch, "1234567890");
+    }
+
+    bool char_isdigitext(char ch) {
+        return char_in_string(
+            ch,
+            "abcdefghijklmnopqrstuvwxyz"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "1234567890"
+            "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~");
+    }
+
+    bool char_isdigitsep(char ch) {
+        return char_in_string(ch, ".bdxo");
+    }
+
+    bool char_isgroupchar(char ch) {
+        return char_in_string(ch, ")}][{(");
+    }
+
+    bool char_isnamechar(char ch) {
+        return char_in_string(
+            ch,
+            "abcdefghijklmnopqrstuvwxyz"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "1234567890"
+            "_");
+    }
+
+    bool char_isnewline(char ch) {
+        return char_in_string(ch, "\n");
+    }
+
+    bool char_isnoparse(char ch) {
+        return char_in_string(ch, " \t\n\r\v\f");
+    }
+
+    bool char_ispuncchar(char ch) {
+        return !char_isnamechar(ch);
+    }
+
+    bool char_isstrchar(char ch) {
+        return char_in_string(ch, "'`\"");
+    }
+
+    bool char_istermchar(char ch) {
+        return char_in_string(ch, ";");
+    }
+
+    bool symbol_isname(std::string& symbol) {
+        return
+            symbol.length() > 0
+            && char_isnamechar(symbol[0])
+            && !char_isdigitchar(symbol[0])
+            && char_isnamechar(symbol[symbol.length()-1]);
+    }
+
+    bool symbol_isnumeric(std::string& symbol) {
+        bool result = false;
+
+        // Byte array might be numeric if  any chars
+        // in the sequence are digits.
+        for (char ch : symbol)
+            result += char_isdigitchar(ch);
+        if (!result) return result;
+
+        uint base_notation = 0;
+        // Byte array is numeric if there is not mixing
+        // of floating point ('.') char and special
+        // base notations (0x, 0d, 0b, 0o).
+        for (char ch : "xdbo") {
+            if (char_in_string(ch, symbol) && char_in_string('.', symbol))
+                return false;
+            if (char_in_string(ch, symbol))
+                base_notation = (uint)ch;
+        }
+
+        // Byte array is numeric if only digits are
+        // found in the sequence.
+        for (char ch : symbol) {
+            // If parsing for base 10, binary or octal.
+            if (base_notation == 0 || base_notation == 98 || base_notation == 111) {
+                if (!char_in_string(ch, "1234567890.xdbo"))
+                    return false;
+            // If parsing hex or some other base.
+            } else {
+                if (!char_isdigitext(ch))
+                    return false;
+            }
+        }
+
+        // I hate this so much about C++.
+        return (std::ranges::count(symbol.begin(), symbol.end(), '.') < 2);
+    }
+
+    bool symbol_ispunc(std::string& symbol) {
+        return
+            symbol.length() > 0
+            && !char_isnamechar(symbol[0])
+            && !char_isnamechar(symbol[symbol.length()-1]);
+    }
+
+    bool symbol_isstrsym(std::string& symbol) {
+        std::string stringsyms[] = {"'", "'''", "`", "```", "\"", "\"\"\""};
+
+        if (symbol.length() < 1)
+            return false;
+
+        for (std::string sym : stringsyms)
+            if (sym == symbol)
+                return true;
+
+        return false;
+    }
+
+    bool symbol_istermed(std::string& symbol, char next) {
+        return
+            symbol.length() > 0
+            && !char_in_string(';', symbol)
+            && char_istermchar(next);
+    }
+
+    bool symbol_isvalidname(std::string& symbol, char next) {
+        return symbol_isname(symbol) && !char_ispuncchar(next);
+    }
+
+    bool symbol_isvalidnum(std::string& symbol, char next) {
+        if (!symbol_isnumeric(symbol) && symbol.compare(".") != 0)
+            return false;
+
+        // If symbol has floating point ('.').
+        if (char_in_string('.', symbol)) {
+            // Next character should not be
+            // punctuation.
+            return !char_ispuncchar(next);
+        }
+
+        return
+            char_isdigitchar(next)
+            || char_isdigitsep(next)
+            || !char_ispuncchar(next);
+    }
+
+    bool symbol_isvalidpunc(std::string& symbol, char next) {
+        return !(symbol_ispunc(symbol) && char_isnamechar(next));
+    }
 
     template <typename T>
     // Parses a buffer of data into symbols that are
@@ -323,160 +458,4 @@ namespace vixen::symbols {
                 return {lineno, column, symbol};
             }
     };
-
-    bool char_in_string(char ch, std::string str) {
-        return str.find(ch) != MAX_SIZET;
-    }
-
-    bool char_iscomment(char ch) {
-        return char_in_string(ch, "#");
-    }
-
-    bool char_isdigitchar(char ch) {
-        return char_in_string(ch, "1234567890");
-    }
-
-    bool char_isdigitext(char ch) {
-        return char_in_string(
-            ch,
-            "abcdefghijklmnopqrstuvwxyz"
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            "1234567890"
-            "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~");
-    }
-
-    bool char_isdigitsep(char ch) {
-        return char_in_string(ch, ".bdxo");
-    }
-
-    bool char_isgroupchar(char ch) {
-        return char_in_string(ch, ")}][{(");
-    }
-
-    bool char_isnamechar(char ch) {
-        return char_in_string(
-            ch,
-            "abcdefghijklmnopqrstuvwxyz"
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            "1234567890"
-            "_");
-    }
-
-    bool char_isnewline(char ch) {
-        return char_in_string(ch, "\n");
-    }
-
-    bool char_isnoparse(char ch) {
-        return char_in_string(ch, " \t\n\r\v\f");
-    }
-
-    bool char_ispuncchar(char ch) {
-        return !char_isnamechar(ch);
-    }
-
-    bool char_isstrchar(char ch) {
-        return char_in_string(ch, "'`\"");
-    }
-
-    bool char_istermchar(char ch) {
-        return char_in_string(ch, ";");
-    }
-
-    bool symbol_isname(std::string& symbol) {
-        return
-            symbol.length() > 0
-            && char_isnamechar(symbol[0])
-            && !char_isdigitchar(symbol[0])
-            && char_isnamechar(symbol[symbol.length()-1]);
-    }
-
-    bool symbol_isnumeric(std::string& symbol) {
-        bool result = false;
-
-        // Byte array might be numeric if  any chars
-        // in the sequence are digits.
-        for (char ch : symbol)
-            result += char_isdigitchar(ch);
-        if (!result) return result;
-
-        uint base_notation = 0;
-        // Byte array is numeric if there is not mixing
-        // of floating point ('.') char and special
-        // base notations (0x, 0d, 0b, 0o).
-        for (char ch : "xdbo") {
-            if (char_in_string(ch, symbol) && char_in_string('.', symbol))
-                return false;
-            if (char_in_string(ch, symbol))
-                base_notation = (uint)ch;
-        }
-
-        // Byte array is numeric if only digits are
-        // found in the sequence.
-        for (char ch : symbol) {
-            // If parsing for base 10, binary or octal.
-            if (base_notation == 0 || base_notation == 98 || base_notation == 111) {
-                if (!char_in_string(ch, "1234567890.xdbo"))
-                    return false;
-            // If parsing hex or some other base.
-            } else {
-                if (!char_isdigitext(ch))
-                    return false;
-            }
-        }
-
-        // I hate this so much about C++.
-        return (std::ranges::count(symbol.begin(), symbol.end(), '.') < 2);
-    }
-
-    bool symbol_ispunc(std::string& symbol) {
-        return
-            symbol.length() > 0
-            && !char_isnamechar(symbol[0])
-            && !char_isnamechar(symbol[symbol.length()-1]);
-    }
-
-    bool symbol_isstrsym(std::string& symbol) {
-        std::string stringsyms[] = {"'", "'''", "`", "```", "\"", "\"\"\""};
-
-        if (symbol.length() < 1)
-            return false;
-
-        for (std::string sym : stringsyms)
-            if (sym == symbol)
-                return true;
-
-        return false;
-    }
-
-    bool symbol_istermed(std::string& symbol, char next) {
-        return
-            symbol.length() > 0
-            && !char_in_string(';', symbol)
-            && char_istermchar(next);
-    }
-
-    bool symbol_isvalidname(std::string& symbol, char next) {
-        return symbol_isname(symbol) && !char_ispuncchar(next);
-    }
-
-    bool symbol_isvalidnum(std::string& symbol, char next) {
-        if (!symbol_isnumeric(symbol) && symbol.compare(".") != 0)
-            return false;
-
-        // If symbol has floating point ('.').
-        if (char_in_string('.', symbol)) {
-            // Next character should not be
-            // punctuation.
-            return !char_ispuncchar(next);
-        }
-
-        return
-            char_isdigitchar(next)
-            || char_isdigitsep(next)
-            || !char_ispuncchar(next);
-    }
-
-    bool symbol_isvalidpunc(std::string& symbol, char next) {
-        return !(symbol_ispunc(symbol) && char_isnamechar(next));
-    }
 };
