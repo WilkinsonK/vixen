@@ -68,7 +68,7 @@ class Lexer : SymbolParser<TRIPLET(std::string)> {
         Lexer(std::ifstream& file) {
             std::string buf;
             while (std::getline(file, buf))
-                this->data.append(buf);
+                this->data.append(buf + "\n");
 
             this->dimension_line = 1;
             this->last_line_at   = 0;
@@ -468,8 +468,9 @@ bool symbol_isvalidpunc(std::string& symbol, char next) {
 }
 
 int main(void) {
-    // Still not parsing correctly.
-    Lexer lexer("55 + 45;x;'Hallo'; x: int = 0; x++;");
+    std::ifstream file("tests/test_symbols.vxn");
+    Lexer lexer(file);
+    file.close();
     TRIPLET(std::string) token;
 
     while (!lexer.end()) {
