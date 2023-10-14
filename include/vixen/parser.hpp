@@ -4,7 +4,7 @@
 
 namespace vixen::parser {
     class Parser {
-        private:
+        protected:
             vixen::tokens::Lexer      lexer;
             vixen::nodes::ProgramNode program;
 
@@ -32,5 +32,68 @@ namespace vixen::parser {
             // Requests the next token from the
             // lexer and rotates the token history.
             virtual void update() = 0;
+    };
+
+    class TreeParser : public Parser {
+        private:
+            vixen::tokens::Token lexer_ribbon[3];
+
+        public:
+            TreeParser(vixen::tokens::Lexer lexer) {
+                this->lexer = lexer;
+                this->lexer_ribbon[1] = lexer.next();
+                this->lexer_ribbon[2] = lexer.next();
+                this->program         = vixen::nodes::ProgramNode();
+            }
+
+            vixen::tokens::Token current() {
+                return this->lexer_ribbon[1];
+            }
+
+            vixen::tokens::Token previous() {
+                return this->lexer_ribbon[0];
+            }
+
+            vixen::tokens::Token next() {
+                return this->lexer_ribbon[2];
+            }
+
+            bool done() {
+                for (const auto& symbol : {"EOF", "EOL"}) {
+                    if (this->current().symbol == symbol)
+                        return true;
+                }
+                return false;
+            }
+
+            void expect(vixen::tokens::TokenType type) {
+                std::string got, exp;
+                vixen::tokens::Token curr;
+                
+                curr = this->current();
+                if (curr.type != type) {
+                    got = vixen::tokens::tokens_find_genname(curr.symbol);
+                    exp = vixen::tokens::tokens_find_genname(type);
+                    std::cerr
+                        << "Expected " << exp << " got '" << got << "'."
+                        << std::endl;
+                    exit(1);
+                }
+            }
+
+            void update() {
+                this->lexer_ribbon[0] = this->lexer_ribbon[1];
+                this->lexer_ribbon[1] = this->lexer_ribbon[2];
+                this->lexer_ribbon[2] = this->lexer.next();
+            }
+
+            void parse() {
+                while (!this->done()) {
+                    this->program.add(this->parse_stmt());
+                    this->update();
+                }
+            }
+
+            vixen::nodes::StatementNode parse_stmt() {}
     };
 };
