@@ -4,6 +4,7 @@
 #include "include/vixen.hpp"
 
 using namespace std;
+using namespace vixen;
 
 #define VIXEN_NAME    "Vixen"
 #define VIXEN_VERSION "0.4.2"
@@ -118,7 +119,7 @@ void parse(VixenNamespace& vxn, int argc, const char* argv[]) {
 }
 
 int main(int argc, const char* argv[]) {
-    vixen::tokens::Lexer lexer;
+    tokens::Lexer lexer;
     VixenNamespace vxn;
     parse(vxn, argc, argv);
 
@@ -126,13 +127,13 @@ int main(int argc, const char* argv[]) {
         ifstream file(vxn.file);
         if (!file.is_open())
             panic(vxn, "Cannot open file '" + vxn.file + "'.");
-        lexer = vixen::tokens::Lexer(file, vxn.file);
+        lexer = tokens::Lexer(file, vxn.file);
         file.close();
     } else {
-        lexer = vixen::tokens::Lexer(vxn.cinput);
+        lexer = tokens::Lexer(vxn.cinput);
     }
 
-    vixen::tokens::Token token;
+    tokens::Token token;
     while (!lexer.end()) {
         token = lexer.next();
         std::cout << token << std::endl;

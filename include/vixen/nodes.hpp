@@ -1,7 +1,11 @@
 #pragma once
+#include <vector>
+
 #include "tokens.hpp"
 
 namespace vixen::nodes {
+    using namespace tokens;
+
     // A parsed expression, term, or phrase
     // parsed from a sequence of tokens or a
     // value from a single token.
@@ -21,15 +25,15 @@ namespace vixen::nodes {
     // A phrase composed of multiple nodes.
     class StatementNode : public TreeNode {
         protected:
-            vixen::tokens::TokenType type;
+            TokenType type;
 
         public:
             StatementNode() {}
-            StatementNode(vixen::tokens::TokenType type) {
+            StatementNode(TokenType type) {
                 this->type = type;
             }
 
-            vixen::tokens::TokenType get_type() {
+            TokenType get_type() {
                 return this->type;
             }
     };
@@ -42,13 +46,13 @@ namespace vixen::nodes {
     // A left, an operator, and a right.
     class BinaryExpressionNode : public ExpressionNode {
         private:
-            vixen::tokens::Token oper;
+            Token oper;
             ExpressionNode       left;
             ExpressionNode       right;
 
         public:
             BinaryExpressionNode(
-                vixen::tokens::Token token,
+                Token token,
                 ExpressionNode left,
                 ExpressionNode right) {
                 
@@ -62,10 +66,10 @@ namespace vixen::nodes {
     // A literal value.
     class LiteralNode : public ExpressionNode {
         private:
-            vixen::tokens::Token value;
+            Token value;
 
         public:
-            LiteralNode(vixen::tokens::Token value) {
+            LiteralNode(Token value) {
                 this->type  = value.type;
                 this->value = value;
             }

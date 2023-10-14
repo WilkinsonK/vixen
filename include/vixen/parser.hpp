@@ -3,18 +3,21 @@
 #include "tokens.hpp"
 
 namespace vixen::parser {
+    using namespace nodes;
+    using namespace tokens;
+
     class Parser {
         protected:
-            vixen::tokens::Lexer      lexer;
-            vixen::nodes::ProgramNode program;
+            Lexer       lexer;
+            ProgramNode program;
 
         public:
             // The current token being observed.
-            virtual vixen::tokens::Token current() = 0;
+            virtual Token current() = 0;
             // The last token observed.
-            virtual vixen::tokens::Token previous() = 0;
+            virtual Token previous() = 0;
             // The next token to be observed.
-            virtual vixen::tokens::Token next() = 0;
+            virtual Token next() = 0;
             // The lexer has been exhausted of all
             // available tokens.
             virtual bool done() = 0;
@@ -25,7 +28,7 @@ namespace vixen::parser {
             // This function returns `void` but
             // panics if the next token is not of
             // the expected type.
-            virtual void expect(vixen::tokens::TokenType type) = 0;
+            virtual void expect(TokenType type) = 0;
             // Parses the tokens provided by the
             // lexer.
             virtual void parse() = 0;
@@ -36,25 +39,25 @@ namespace vixen::parser {
 
     class TreeParser : public Parser {
         private:
-            vixen::tokens::Token lexer_ribbon[3];
+            Token lexer_ribbon[3];
 
         public:
-            TreeParser(vixen::tokens::Lexer lexer) {
+            TreeParser(Lexer lexer) {
                 this->lexer = lexer;
                 this->lexer_ribbon[1] = lexer.next();
                 this->lexer_ribbon[2] = lexer.next();
-                this->program         = vixen::nodes::ProgramNode();
+                this->program         = ProgramNode();
             }
 
-            vixen::tokens::Token current() {
+            Token current() {
                 return this->lexer_ribbon[1];
             }
 
-            vixen::tokens::Token previous() {
+            Token previous() {
                 return this->lexer_ribbon[0];
             }
 
-            vixen::tokens::Token next() {
+            Token next() {
                 return this->lexer_ribbon[2];
             }
 
@@ -66,14 +69,14 @@ namespace vixen::parser {
                 return false;
             }
 
-            void expect(vixen::tokens::TokenType type) {
+            void expect(TokenType type) {
                 std::string got, exp;
-                vixen::tokens::Token curr;
+                Token curr;
                 
                 curr = this->current();
                 if (curr.type != type) {
-                    got = vixen::tokens::tokens_find_genname(curr.symbol);
-                    exp = vixen::tokens::tokens_find_genname(type);
+                    got = tokens_find_genname(curr.symbol);
+                    exp = tokens_find_genname(type);
                     std::cerr
                         << "Expected " << exp << " got '" << got << "'."
                         << std::endl;
@@ -94,6 +97,6 @@ namespace vixen::parser {
                 }
             }
 
-            vixen::nodes::StatementNode parse_stmt() {}
+            StatementNode parse_stmt() {}
     };
 };

@@ -1,7 +1,15 @@
 #pragma once
+#include <unordered_map>
+
 #include "symbols.hpp"
 
+#ifndef SIZE_T_MAX
+#define SIZE_T_MAX ((size_t)(-1))
+#endif
+
 namespace vixen::tokens {
+    using namespace symbols;
+
     enum class TokenType : uint {
         Error,
         ErrorUnknown,
@@ -255,7 +263,7 @@ namespace vixen::tokens {
                 this->symbol = symbol;
                 this->file   = file;
 
-                if (vixen::symbols::symbol_isnumeric(symbol))
+                if (symbol_isnumeric(symbol))
                     this->type = tokens_find_numtype(symbol);
                 else
                     this->type = tokens_find_gentype(symbol);
@@ -302,11 +310,11 @@ namespace vixen::tokens {
         return false;
     }
 
-    class Lexer : public vixen::symbols::BasicSymbolParser<Token> {
+    class Lexer : public BasicSymbolParser<Token> {
         public:
-            Lexer() : vixen::symbols::BasicSymbolParser<Token>() {}
-            Lexer(std::string& data) : vixen::symbols::BasicSymbolParser<Token>(data) {}
-            Lexer(std::ifstream& file, const std::string& filename = "") : vixen::symbols::BasicSymbolParser<Token>(file, filename) {}
+            Lexer() : BasicSymbolParser<Token>() {}
+            Lexer(std::string& data) : BasicSymbolParser<Token>(data) {}
+            Lexer(std::ifstream& file, const std::string& filename = "") : BasicSymbolParser<Token>(file, filename) {}
 
             Token next() {
                 Lineno lineno;
@@ -316,7 +324,7 @@ namespace vixen::tokens {
                 std::tie(
                     lineno,
                     column,
-                    symbol) = vixen::symbols::BasicSymbolParser<Token>::next_raw();
+                    symbol) = BasicSymbolParser<Token>::next_raw();
 
                 return Token(lineno, column, symbol, this->file);
             }
