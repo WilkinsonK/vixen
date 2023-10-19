@@ -119,7 +119,9 @@ void parse(VixenNamespace& vxn, int argc, const char* argv[]) {
 }
 
 int main(int argc, const char* argv[]) {
-    tokens::Lexer lexer;
+    tokens::Lexer      lexer;
+    parser::TreeParser parser;
+
     VixenNamespace vxn;
     parse(vxn, argc, argv);
 
@@ -133,11 +135,8 @@ int main(int argc, const char* argv[]) {
         lexer = tokens::Lexer(vxn.cinput);
     }
 
-    tokens::Token token;
-    while (!lexer.end()) {
-        token = lexer.next();
-        std::cout << token << std::endl;
-    }
+    parser = parser::TreeParser(lexer);
+    parser::parse(parser);
 
     return 0;
 }

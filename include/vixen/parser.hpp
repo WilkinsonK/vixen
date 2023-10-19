@@ -8,8 +8,7 @@ namespace vixen::parser {
 
     class Parser {
         protected:
-            Lexer       lexer;
-            ProgramNode program;
+            Lexer lexer;
 
         public:
             // The current token being observed.
@@ -29,9 +28,6 @@ namespace vixen::parser {
             // panics if the next token is not of
             // the expected type.
             virtual void expect(TokenType type) = 0;
-            // Parses the tokens provided by the
-            // lexer.
-            virtual void parse() = 0;
             // Requests the next token from the
             // lexer and rotates the token history.
             virtual void update() = 0;
@@ -42,11 +38,11 @@ namespace vixen::parser {
             Token lexer_ribbon[3];
 
         public:
+            TreeParser() {}
             TreeParser(Lexer lexer) {
                 this->lexer = lexer;
                 this->lexer_ribbon[1] = lexer.next();
                 this->lexer_ribbon[2] = lexer.next();
-                this->program         = ProgramNode();
             }
 
             Token current() {
@@ -89,14 +85,99 @@ namespace vixen::parser {
                 this->lexer_ribbon[1] = this->lexer_ribbon[2];
                 this->lexer_ribbon[2] = this->lexer.next();
             }
-
-            void parse() {
-                while (!this->done()) {
-                    this->program.add(this->parse_stmt());
-                    this->update();
-                }
-            }
-
-            StatementNode parse_stmt() {}
     };
+
+    typedef TreeNode(*node_parser)(Parser&);
+    TreeNode parse_expr(Parser&);
+
+    TreeNode parse_expr_primitive(Parser& parser) {
+        Token current_tk = parser.current();
+
+        parser.update();
+        if (tokens_isgeneric(current_tk))
+            return TreeNode("LiteralName", current_tk);
+        else if (tokens_isfloat(current_tk))
+            return TreeNode("LiteralFlt", current_tk);
+        else if (tokens_isinteger(current_tk))
+            return TreeNode("LiteralInt", current_tk);
+        else if (current_tk.type == TokenType::PuncLParen) {
+            TreeNode expr = parse_expr(parser);
+            parser.expect(TokenType::PuncRParen);
+            parser.update();
+            return expr;
+        } else {
+            std::cerr
+                << "Unexpected token at "
+                << "(lineno: " << current_tk.lineno << " col: "
+                << current_tk.column << "). Got " << current_tk.symbol
+                << std::endl;
+            std::exit(1);
+        }
+    }
+
+    TreeNode parse_expr_binary(
+        Parser& parser,
+        vector<TokenType> expects,
+        node_parser next) {
+
+        auto exists = [&](TokenType item){
+            auto exp = expects;
+            return std::find(exp.begin(), exp.end(), item) != exp.end();
+        };
+
+        TreeNode binary, left, right;
+
+        left = next(parser);
+        while (exists(parser.current().type)) {
+            binary = TreeNode("BinaryOperation", parser.current());
+            parser.update();
+            right = next(parser);
+            node_init_binary(binary, left, right);
+            left = binary;
+        }
+
+        return left;
+    }
+
+    TreeNode parse_expr_multiplicative(Parser& parser) {
+        return parse_expr_binary(
+            parser,
+            {
+                TokenType::OperDivide,
+                TokenType::OperDivFloor,
+                TokenType::OperModulus,
+                TokenType::OperStar,
+                TokenType::OperPower
+            },
+            parse_expr_primitive);
+    }
+
+    TreeNode parse_expr_additive(Parser& parser) {
+        return parse_expr_binary(
+            parser,
+            {
+                TokenType::OperPlus,
+                TokenType::OperMinus
+            },
+            parse_expr_multiplicative);
+    }
+
+    TreeNode parse_expr(Parser& parser) {
+        return parse_expr_additive(parser);
+    }
+
+    TreeNode parse_stmt(Parser& parser) {
+        return parse_expr(parser);
+    }
+
+    // Parses the tokens provided by the
+    // lexer.
+    void parse(Parser& parser) {
+        TreeNode program("Program");
+        TreeNode next;
+        while (!parser.done()) {
+            next = parse_stmt(parser);
+            node_program_add(program, next);
+        }
+    }
 };
