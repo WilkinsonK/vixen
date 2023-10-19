@@ -41,8 +41,8 @@ namespace vixen::parser {
             TreeParser() {}
             TreeParser(Lexer lexer) {
                 this->lexer = lexer;
-                this->lexer_ribbon[1] = lexer.next();
-                this->lexer_ribbon[2] = lexer.next();
+                this->update();
+                this->update();
             }
 
             Token current() {
@@ -81,8 +81,8 @@ namespace vixen::parser {
             }
 
             void update() {
-                this->lexer_ribbon[0] = this->lexer_ribbon[1];
-                this->lexer_ribbon[1] = this->lexer_ribbon[2];
+                this->lexer_ribbon[0] = this->current();
+                this->lexer_ribbon[1] = this->next();
                 this->lexer_ribbon[2] = this->lexer.next();
             }
     };
@@ -92,8 +92,8 @@ namespace vixen::parser {
 
     TreeNode parse_expr_primitive(Parser& parser) {
         Token current_tk = parser.current();
-
         parser.update();
+
         if (tokens_isgeneric(current_tk))
             return node_init_literal("Name", current_tk);
         else if (tokens_isfloat(current_tk))
