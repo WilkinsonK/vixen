@@ -95,11 +95,11 @@ namespace vixen::parser {
 
         parser.update();
         if (tokens_isgeneric(current_tk))
-            return TreeNode("LiteralName", current_tk);
+            return node_init_literal("Name", current_tk);
         else if (tokens_isfloat(current_tk))
-            return TreeNode("LiteralFlt", current_tk);
+            return node_init_literal("Flt", current_tk);
         else if (tokens_isinteger(current_tk))
-            return TreeNode("LiteralInt", current_tk);
+            return node_init_literal("Int", current_tk);
         else if (current_tk.type == TokenType::PuncLParen) {
             TreeNode expr = parse_expr(parser);
             parser.expect(TokenType::PuncRParen);
