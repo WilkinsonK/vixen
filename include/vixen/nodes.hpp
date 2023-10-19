@@ -43,18 +43,23 @@ namespace vixen::nodes {
         private:
             friend std::ostream& operator<<(std::ostream& os, const TreeNode& node) {
                 os << node.type << "Node";
+                if (node.type.find("Literal") != std::string::npos) {
+                    os << "[value: " << node.token << "]";
+                    return os;
+                }
 
                 if (node.token.symbol != "") {
                     os << "(" << node.token.symbol << ")";
                 }
 
-                if (node.children.size() > 0) {
-                    os << "[";
-                    for (const auto& child : node.children) {
-                        os << child.first << ": " << child.second;
-                    }
-                    os << "]";
+                os << "[";
+                for (auto it = node.children.begin(); it != node.children.end();) {
+                    auto current = it++;
+                    os << current->first << ": " << current->second;
+                    if (it != node.children.end())
+                        os << ", ";
                 }
+                os << "]";
 
                 return os;
             }
@@ -131,4 +136,11 @@ namespace vixen::nodes {
 
             return stmt;
         }
+
+    // Initialize a node as a literal value.
+    TreeNode node_init_literal(std::string subtype, Token value)
+    {
+        TreeNode stmt("Literal" + subtype, value);
+        return stmt;
+    }
 };
