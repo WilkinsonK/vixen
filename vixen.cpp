@@ -121,6 +121,7 @@ void parse(VixenNamespace& vxn, int argc, const char* argv[]) {
 int main(int argc, const char* argv[]) {
     tokens::Lexer      lexer;
     parser::TreeParser parser;
+    nodes::TreeNode    program;
 
     VixenNamespace vxn;
     parse(vxn, argc, argv);
@@ -135,8 +136,9 @@ int main(int argc, const char* argv[]) {
         lexer = tokens::Lexer(vxn.cinput);
     }
 
-    parser = parser::TreeParser(lexer);
-    parser::parse(parser);
+    parser  = parser::TreeParser(lexer);
+    program = parser::parse(parser);
+    std::cout << program << std::endl;
 
     return 0;
 }

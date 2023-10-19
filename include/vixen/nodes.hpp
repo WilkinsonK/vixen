@@ -40,7 +40,24 @@ namespace vixen::nodes {
             void child_set(std::string name, TreeNode node) {
                 this->children[name] = node;
             }
+        private:
+            friend std::ostream& operator<<(std::ostream& os, const TreeNode& node) {
+                os << node.type << "Node";
 
+                if (node.token.symbol != "") {
+                    os << "(" << node.token.symbol << ")";
+                }
+
+                if (node.children.size() > 0) {
+                    os << "[";
+                    for (const auto& child : node.children) {
+                        os << child.first << ": " << child.second;
+                    }
+                    os << "]";
+                }
+
+                return os;
+            }
     };
 
     /*
@@ -103,12 +120,15 @@ namespace vixen::nodes {
     }
 
     // Initialize a node as a binary statement.
-    void node_init_binary(
-        TreeNode& stmt,
+    TreeNode node_init_binary(
+        Token operation,
         TreeNode& left,
         TreeNode& right) {
 
+            TreeNode stmt("BinaryOperation", operation);
             node_stmt_setleft(stmt, left);
             node_stmt_setright(stmt, right);
+
+            return stmt;
         }
 };

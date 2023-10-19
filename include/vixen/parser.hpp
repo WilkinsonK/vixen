@@ -125,15 +125,15 @@ namespace vixen::parser {
             return std::find(exp.begin(), exp.end(), item) != exp.end();
         };
 
-        TreeNode binary, left, right;
+        Token    operation;
+        TreeNode left, right;
 
         left = next(parser);
         while (exists(parser.current().type)) {
-            binary = TreeNode("BinaryOperation", parser.current());
+            operation = parser.current();
             parser.update();
             right = next(parser);
-            node_init_binary(binary, left, right);
-            left = binary;
+            left  = node_init_binary(operation, left, right);
         }
 
         return left;
@@ -172,12 +172,16 @@ namespace vixen::parser {
 
     // Parses the tokens provided by the
     // lexer.
-    void parse(Parser& parser) {
+    TreeNode parse(Parser& parser) {
         TreeNode program("Program");
         TreeNode next;
+
         while (!parser.done()) {
             next = parse_stmt(parser);
+            parser.update();
             node_program_add(program, next);
         }
+
+        return program;
     }
 };
