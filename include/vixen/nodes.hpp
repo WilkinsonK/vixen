@@ -131,7 +131,7 @@ namespace vixen::nodes {
         TreeNode& right) {
 
             TreeNode stmt(
-                "Binary" + tokens_find_genname(operation.type),
+                tokens_find_genname(operation.type),
                 operation
             );
 
