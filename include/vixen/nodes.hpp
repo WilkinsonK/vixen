@@ -130,7 +130,11 @@ namespace vixen::nodes {
         TreeNode& left,
         TreeNode& right) {
 
-            TreeNode stmt("BinaryOperation", operation);
+            TreeNode stmt(
+                "Binary" + tokens_find_genname(operation.type),
+                operation
+            );
+
             node_stmt_setleft(stmt, left);
             node_stmt_setright(stmt, right);
 
@@ -142,5 +146,10 @@ namespace vixen::nodes {
     {
         TreeNode stmt("Literal" + subtype, value);
         return stmt;
+    }
+
+    // Initialize a terminator node.
+    TreeNode node_init_term(Token terminator) {
+        return TreeNode("Terminator", terminator);
     }
 };
