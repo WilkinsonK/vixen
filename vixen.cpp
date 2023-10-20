@@ -112,9 +112,7 @@ void parse(VixenNamespace& vxn, int argc, const char* argv[]) {
         exit(0);
     }
 
-    if (!vxn.file.length() && !vxn.cinput.length())
-        panic(vxn, "No input was provided.", 1, true);
-    else if (vxn.file.length() && vxn.cinput.length())
+    if (vxn.file.length() && vxn.cinput.length())
         panic(vxn, "Cannot handle more than one input source.");
 }
 
@@ -126,19 +124,34 @@ int main(int argc, const char* argv[]) {
     VixenNamespace vxn;
     parse(vxn, argc, argv);
 
-    if (vxn.file.length()) {
-        ifstream file(vxn.file);
-        if (!file.is_open())
-            panic(vxn, "Cannot open file '" + vxn.file + "'.");
-        lexer = tokens::Lexer(file, vxn.file);
-        file.close();
-    } else {
-        lexer = tokens::Lexer(vxn.cinput);
-    }
+    if (!vxn.file.length() && !vxn.cinput.length()) {
+        std::string user_in;
+        while (1) {
+            std::cout << ">>> ";
+            std::getline(std::cin, user_in);
 
-    parser  = parser::TreeParser(lexer);
-    program = parser::parse(parser);
-    std::cout << program << std::endl;
+            parser = parser::TreeParser(tokens::Lexer(user_in));
+            std::cout
+                << parser::parse(parser)
+                << std::endl;
+        }
+    } else {
+        // Interperate code provided from cli or
+        // from file path.
+        if (vxn.file.length()) {
+            ifstream file(vxn.file);
+            if (!file.is_open())
+                panic(vxn, "Cannot open file '" + vxn.file + "'.");
+            lexer = tokens::Lexer(file, vxn.file);
+            file.close();
+        } else if (vxn.cinput.length()) {
+            lexer = tokens::Lexer(vxn.cinput);
+        }
+
+        parser  = parser::TreeParser(lexer);
+        program = parser::parse(parser);
+        std::cout << program << std::endl;
+    }
 
     return 0;
 }

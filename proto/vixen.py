@@ -38,19 +38,25 @@ def main():
         help="interperate input.")
 
     args = prog.parse_args(namespace=VixenCliNamespace())
-    if not args.file and not args.cinput:
-        panic("no input was provided.", prog)
-    elif args.file and args.cinput:
+    if args.file and args.cinput:
         panic("cannot handle more than one input source.")
 
-    if args.cinput:
-        lexer = BasicLexer(args.cinput)
-    else:
-        lexer = BasicLexer(file=args.file)
+    if args.cinput or args.file:
+        if args.cinput:
+            lexer = BasicLexer(args.cinput)
+        else:
+            lexer = BasicLexer(file=args.file)
 
-    tp = TreeParser(lexer)
-    tp.parse()
-    pprint.pp(tp.digest())
+        tp = TreeParser(lexer)
+        tp.parse()
+        pprint.pp(tp.digest())
+    else:
+        while True:
+            if (inp := input(">>> ")) == "":
+                continue
+            tp = TreeParser(BasicLexer(inp))
+            tp.parse()
+            pprint.pp(tp.digest())
 
 
 if __name__ == "__main__":
