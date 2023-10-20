@@ -90,21 +90,59 @@ namespace vixen::parser {
     typedef TreeNode(*node_parser)(Parser&);
     TreeNode parse_expr(Parser&);
 
+    // Parse the simplest possible expression
+    // nodes.
     TreeNode parse_expr_primitive(Parser& parser) {
         Token current_tk = parser.current();
         parser.update();
 
+        // Determines what kind of primitive value
+        // we are trying to parse. We first
+        // ensure if the current token is unknown
+        // and treat it like it is a name.
         if (tokens_isgeneric(current_tk))
             return node_init_literal("Name", current_tk);
+
+        // Next is determine the numerical tokens.
+        // If token is a float token type, return
+        // a float node.
         else if (tokens_isfloat(current_tk))
             return node_init_literal("Flt", current_tk);
+
+        // If token is a value that can express an
+        // integer value, return an integer node.
         else if (tokens_isinteger(current_tk))
             return node_init_literal("Int", current_tk);
+
+        // Parse our groupings next. We treat
+        // groupings as an individual phrase which
+        // adds weight, in a sense, to the
+        // contained expression.
         else if (current_tk.type == TokenType::PuncLParen) {
             TreeNode expr = parse_expr(parser);
             parser.expect(TokenType::PuncRParen);
             parser.update();
             return expr;
+
+        // Parse strings.
+        } else if (current_tk.type == TokenType::StrSingleDbl) {
+            TreeNode expr = node_init_literal("Str", parser.current());
+
+            // Update the lexer ribbon, validate
+            // that the next token is the closing
+            // string char and consume that token.
+            parser.update();
+            parser.expect(TokenType::StrSingleDbl);
+            parser.update();
+            return expr;
+
+        // If the current token is a terminator,
+        // we continue on to the next statement.
+        } else if (current_tk.type == TokenType::PuncTerminator) {
+            return node_init_term(current_tk);
+
+        // If an unsupported token is presented,
+        // throw an error and bail.
         } else {
             std::cerr
                 << "Unexpected token at "
@@ -115,6 +153,8 @@ namespace vixen::parser {
         }
     }
 
+    // Parse a binary expression from the next
+    // series of series of nodes.
     TreeNode parse_expr_binary(
         Parser& parser,
         vector<TokenType> expects,
@@ -139,6 +179,9 @@ namespace vixen::parser {
         return left;
     }
 
+    // A binary expression which defines a
+    // multiplicative operation.
+    // (*, /, //, ** or %)
     TreeNode parse_expr_multiplicative(Parser& parser) {
         return parse_expr_binary(
             parser,
@@ -170,8 +213,8 @@ namespace vixen::parser {
         return parse_expr(parser);
     }
 
-    // Parses the tokens provided by the
-    // lexer.
+    // Creates an AST from the given parser and
+    // its internal lexer.
     TreeNode parse(Parser& parser) {
         TreeNode program("Program");
         TreeNode next;
