@@ -35,7 +35,7 @@ DIGIT_CHARS_EXT = (
     .replace("\\", "")
     .replace("'", "")).encode()
 DIGIT_CHARS_HEX = string.hexdigits.encode()
-DIGIT_SEP_CHARS = b".xdbo"
+DIGIT_SEP_CHARS = b"-_.xdbo"
 END_OF_FILE = bytearray(b"EOF")
 END_OF_LINE = bytearray(b"EOL")
 NAME_CHARS = (string.ascii_letters + string.digits + "_").encode()
@@ -455,7 +455,7 @@ def symbol_isvalidname(symbol: bytearray, next_char: bytes | int):
 
 
 def symbol_isvalidnum(symbol: bytearray, next_char: bytes | int):
-    if not symbol_isnumeric(symbol) and symbol != b".":
+    if not symbol_isnumeric(symbol) and symbol != b"." and symbol != b"-":
         return False
 
     if b"." in symbol:

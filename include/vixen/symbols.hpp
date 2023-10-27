@@ -151,6 +151,10 @@ namespace vixen::symbols {
     }
 
     bool symbol_isvalidnum(std::string& symbol, char next) {
+        // Some exceptions are made in the event
+        // that the first char of a symbol might
+        // be a '.' or the numeric might be signed
+        // '-'.
         if (
             !symbol_isnumeric(symbol)
             && symbol.compare(".") != 0
