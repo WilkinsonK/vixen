@@ -37,7 +37,7 @@ namespace vixen::symbols {
     }
 
     bool char_isdigitsep(char ch) {
-        return char_in_string(ch, ".bdxo");
+        return char_in_string(ch, "-_.bdxo");
     }
 
     bool char_isgroupchar(char ch) {
@@ -106,7 +106,7 @@ namespace vixen::symbols {
         for (char ch : symbol) {
             // If parsing for base 10, binary or octal.
             if (base_notation == 0 || base_notation == 98 || base_notation == 111) {
-                if (!char_in_string(ch, "1234567890.xdbo"))
+                if (!char_in_string(ch, "1234567890-_.xdbo"))
                     return false;
             // If parsing hex or some other base.
             } else {
@@ -151,7 +151,10 @@ namespace vixen::symbols {
     }
 
     bool symbol_isvalidnum(std::string& symbol, char next) {
-        if (!symbol_isnumeric(symbol) && symbol.compare(".") != 0)
+        if (
+            !symbol_isnumeric(symbol)
+            && symbol.compare(".") != 0
+            && symbol.compare("-") != 0)
             return false;
 
         // If symbol has floating point ('.').
