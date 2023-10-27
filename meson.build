@@ -16,7 +16,7 @@ vxn_lib = library(
     soversion : '0.0.0')
 
 # Builds vixen
-vxn_exe = executable('vixen', source_files, link_with : vxn_lib, override_options : ['c_std=23', 'cpp_std=c++20'])
+executable('vixen', source_files, link_with : vxn_lib, override_options : ['c_std=23', 'cpp_std=c++20'])
 
 # Tests libvixen-dev.
 tst_exe = executable(
