@@ -23,11 +23,16 @@ int main(void) {
     // NOTICE: These tests are critical to the
     // foundation of our front-end. Without them,
     // our language might as well not work at all.
-    attempt("string_contains_char", test_vixen::symbols::test_string_contains_char);
-    attempt("char_iscommment", test_vixen::symbols::test_char_iscomment);
-    attempt("char_isdigitchar", test_vixen::symbols::test_char_isdigitchar);
-    attempt("char_isdigittext", test_vixen::symbols::test_char_isdigittext);
-    attempt("char_isdigitsep", test_vixen::symbols::test_char_isdigitsep);
+    add_test("string_contains_char", test_vixen::symbols::test_string_contains_char);
+    add_test("char_iscommment", test_vixen::symbols::test_char_iscomment);
+    add_test("char_isdigitchar", test_vixen::symbols::test_char_isdigitchar);
+    add_test("char_isdigittext", test_vixen::symbols::test_char_isdigittext);
+    add_test("char_isdigitsep", test_vixen::symbols::test_char_isdigitsep);
+    add_test("char_isgroupchar", test_vixen::symbols::test_char_isgroupchar);
+    add_test("char_isnamechar", test_vixen::symbols::test_char_isnamechar);
+    add_test("char_isnewline", test_vixen::symbols::test_char_isnewline);
 
+    dump_header();
+    attempt_all();
     dump_results();
 }
