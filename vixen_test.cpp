@@ -23,16 +23,16 @@ int main(void) {
     // NOTICE: These tests are critical to the
     // foundation of our front-end. Without them,
     // our language might as well not work at all.
-    add_test("string_has_char", test_vixen::symbols::test_string_contains_char);
-    add_test("char_iscommment", test_vixen::symbols::test_char_iscomment);
-    add_test("char_isdigitchar", test_vixen::symbols::test_char_isdigitchar);
-    add_test("char_isdigittext", test_vixen::symbols::test_char_isdigittext);
-    add_test("char_isdigitsep", test_vixen::symbols::test_char_isdigitsep);
-    add_test("char_isgroupchar", test_vixen::symbols::test_char_isgroupchar);
-    add_test("char_isnamechar", test_vixen::symbols::test_char_isnamechar);
-    add_test("char_isnewline", test_vixen::symbols::test_char_isnewline);
-    add_test("char_isnoparse", test_vixen::symbols::test_char_isnoparse);
-    add_test("char_ispuncchar", test_vixen::symbols::test_char_ispuncchar);
+    add_test("symbols::string_has_char", test_vixen::symbols::test_string_contains_char);
+    add_test("symbols::char_iscommment", test_vixen::symbols::test_char_iscomment);
+    add_test("symbols::char_isdigitchar", test_vixen::symbols::test_char_isdigitchar);
+    add_test("symbols::char_isdigittext", test_vixen::symbols::test_char_isdigittext);
+    add_test("symbols::char_isdigitsep", test_vixen::symbols::test_char_isdigitsep);
+    add_test("symbols::char_isgroupchar", test_vixen::symbols::test_char_isgroupchar);
+    add_test("symbols::char_isnamechar", test_vixen::symbols::test_char_isnamechar);
+    add_test("symbols::char_isnewline", test_vixen::symbols::test_char_isnewline);
+    add_test("symbols::char_isnoparse", test_vixen::symbols::test_char_isnoparse);
+    add_test("symbols::char_ispuncchar", test_vixen::symbols::test_char_ispuncchar);
 
     dump_header();
     attempt_all();
