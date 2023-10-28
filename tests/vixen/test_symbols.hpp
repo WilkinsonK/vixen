@@ -56,13 +56,13 @@ namespace test_vixen::symbols {
     }
 
     void test_char_isnamechar() {
+        std::string invalid_chars("!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~");
         std::string valid_chars(
             "abcdefghijklmnopqrstuvwxyz"
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             "1234567890"
             "_");
 
-        std::string invalid_chars("!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~");
 
         for (auto const& ch : valid_chars) {
             if (ch == '\0')
@@ -79,5 +79,34 @@ namespace test_vixen::symbols {
 
     void test_char_isnewline() {
         assert(char_isnewline('\n') == 1, "'\\n' should be a valid newline character.");
+    }
+
+    void test_char_isnoparse() {
+        for (auto const& ch : " \t\n\r\v\f") {
+            if (ch == '\0')
+                continue;
+            assert(char_isnoparse(ch) == 1, "'{}' should be valid whitespace.", ch);
+        }
+    }
+
+    void test_char_ispuncchar() {
+        std::string valid_chars("!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~");
+        std::string invalid_chars(
+            "abcdefghijklmnopqrstuvwxyz"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "1234567890"
+            "_");
+
+        for (auto const& ch : valid_chars) {
+            if (ch == '\0')
+                continue;
+            assert(char_ispuncchar(ch) == 1, "'{}' should be a valid punctuation character.", ch);
+        }
+
+        for (auto const& ch : invalid_chars) {
+            if (ch == '\0')
+                continue;
+            assert(char_ispuncchar(ch) == 0, "'{}' should not be a valid punctuation character.", ch);
+        }
     }
 }
