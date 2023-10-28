@@ -1,34 +1,33 @@
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "tests/vixen/test_testconf.hpp"
+#include "tests/test_vixen.hpp"
 
-// Writes the provided message to stderr and then
-// exits.
-void panicf(const char* fmt, ...) {
-    va_list args;
-
-    fprintf(stderr, "panic: ");
-    va_start(args, fmt);
-    vfprintf(stderr, fmt, args);
-    va_end(args);
-    fprintf(stderr, "\n");
-
-    exit(EXIT_FAILURE);
-}
-
-void assert(int res, const char* reason, ...) {
-    if (res) return;
-    va_list args;
-
-    fprintf(stderr, "failure: ");
-    va_start(args, reason);
-    vfprintf(stderr, reason, args);
-    va_end(args);
-    fprintf(stderr, "\n");
-
-    exit(EXIT_FAILURE);
-}
+using namespace test_vixen;
 
 int main(void) {
     assert(1 != 2, "1 must not equal 2.");
+
+    // Vixen Front End Interface Components.
+    // ------------------------------------------
+    // This section focuses on the parts of our
+    // language that digests raw information from
+    // user input into a structure our backend
+    // can eventually turn into something that's
+    // machine readable.
+
+    // Vixen symbol Parsing Suite.
+    // ------------------------------------------
+    // These functions perform tests that define
+    // symbol parsing behavior. That is, we use
+    // the below to make our expected behavior
+    // more concrete.
+    // NOTICE: These tests are critical to the
+    // foundation of our front-end. Without them,
+    // our language might as well not work at all.
+    attempt("string_contains_char", test_vixen::symbols::test_string_contains_char);
+    attempt("char_iscommment", test_vixen::symbols::test_char_iscomment);
+    attempt("char_isdigitchar", test_vixen::symbols::test_char_isdigitchar);
+    attempt("char_isdigittext", test_vixen::symbols::test_char_isdigittext);
+    attempt("char_isdigitsep", test_vixen::symbols::test_char_isdigitsep);
+
+    dump_results();
 }
