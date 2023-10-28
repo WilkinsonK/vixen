@@ -46,14 +46,19 @@ void assert(const int res, const std::string& reason, Args&&... args) {
 // Try running the test case. Writes to stderr if
 // the test case fails.
 void attempt(const std::string& name) {
-    TestCaseFunc tc = TestCaseRegistry[name];
     std::cout << "attempting test \"" << name << "\": ";
     test_cases_attempted++;
 
     try {
-        tc();
-    } catch (TestAssertionError err) {
+        TestCaseRegistry[name]();
+    } catch (TestAssertionError& err) {
         std::cout << "failure(" << err.what() << ")" << std::endl;
+        return;
+    } catch (const std::exception& err) {
+        std::cout << "failure(unexpected exception)" << std::endl;
+        std::cerr
+            << "\terror: " << err.what()
+            << std::endl;
         return;
     }
 
@@ -63,7 +68,7 @@ void attempt(const std::string& name) {
 
 // Attempt all registered test cases.
 void attempt_all() {
-    for (auto const& [name, tc] : TestCaseRegistry) {
+    for (auto const& [name, _] : TestCaseRegistry) {
         attempt(name);
     }
 }
