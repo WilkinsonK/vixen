@@ -33,6 +33,8 @@ int main(void) {
     add_test("symbols::char_isnewline", test_vixen::symbols::test_char_isnewline);
     add_test("symbols::char_isnoparse", test_vixen::symbols::test_char_isnoparse);
     add_test("symbols::char_ispuncchar", test_vixen::symbols::test_char_ispuncchar);
+    add_test("symbols::char_isstrchar", test_vixen::symbols::test_char_isstrchar);
+    add_test("symbols::char_istermchar", test_vixen::symbols::test_char_istermchar);
 
     dump_header();
     attempt_all();

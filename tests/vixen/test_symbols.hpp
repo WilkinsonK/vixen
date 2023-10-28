@@ -109,4 +109,16 @@ namespace test_vixen::symbols {
             assert(char_ispuncchar(ch) == 0, "'{}' should not be a valid punctuation character.", ch);
         }
     }
+
+    void test_char_isstrchar() {
+        for (auto const& ch : "'`\"") {
+            if (ch == '\0')
+                continue;
+            assert(char_isstrchar(ch) == 1, "'{}' should be a valid string annotation.", ch);
+        }
+    }
+
+    void test_char_istermchar() {
+        assert(char_istermchar(';') == 1, "';' should be a valid line terminating character.");
+    }
 }
