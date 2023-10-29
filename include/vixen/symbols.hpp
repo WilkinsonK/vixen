@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <ranges>
@@ -15,19 +16,19 @@ typedef uint Lineno;
 #define TRIPLET(T) std::tuple<Lineno, Column, T>
 
 namespace vixen::symbols {
-    bool char_in_string(char ch, std::string str) {
+    bool char_in_string(const char ch, const std::string& str) {
         return str.find(ch) != MAX_SIZET;
     }
 
-    bool char_iscomment(char ch) {
+    bool char_iscomment(const char ch) {
         return char_in_string(ch, "#");
     }
 
-    bool char_isdigitchar(char ch) {
+    bool char_isdigitchar(const char ch) {
         return char_in_string(ch, "1234567890");
     }
 
-    bool char_isdigitext(char ch) {
+    bool char_isdigitext(const char ch) {
         return char_in_string(
             ch,
             "abcdefghijklmnopqrstuvwxyz"
@@ -36,15 +37,15 @@ namespace vixen::symbols {
             "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~");
     }
 
-    bool char_isdigitsep(char ch) {
+    bool char_isdigitsep(const char ch) {
         return char_in_string(ch, "-_.bdxo");
     }
 
-    bool char_isgroupchar(char ch) {
+    bool char_isgroupchar(const char ch) {
         return char_in_string(ch, ")}][{(");
     }
 
-    bool char_isnamechar(char ch) {
+    bool char_isnamechar(const char ch) {
         return char_in_string(
             ch,
             "abcdefghijklmnopqrstuvwxyz"
@@ -53,35 +54,46 @@ namespace vixen::symbols {
             "_");
     }
 
-    bool char_isnewline(char ch) {
+    bool char_isnewline(const char ch) {
         return char_in_string(ch, "\n");
     }
 
-    bool char_isnoparse(char ch) {
+    bool char_isnoparse(const char ch) {
         return char_in_string(ch, " \t\n\r\v\f");
     }
 
-    bool char_ispuncchar(char ch) {
+    bool char_ispuncchar(const char ch) {
         return !char_isnamechar(ch);
     }
 
-    bool char_isstrchar(char ch) {
+    bool char_isstrchar(const char ch) {
         return char_in_string(ch, "'`\"");
     }
 
-    bool char_istermchar(char ch) {
+    bool char_istermchar(const char ch) {
         return char_in_string(ch, ";");
     }
 
-    bool symbol_isname(std::string& symbol) {
-        return
-            symbol.length() > 0
-            && char_isnamechar(symbol[0])
-            && !char_isdigitchar(symbol[0])
-            && char_isnamechar(symbol[symbol.length()-1]);
+    bool symbol_isname(const std::string& symbol) {
+        if (symbol.length() == 0) return false;
+        if (char_isdigitchar(symbol[0])) return false;
+
+        bool(*validator)(char) = [](char ch) {
+            return char_isnamechar(ch) || char_isdigitchar(ch);
+        };
+        char upper, lower;
+
+        for (int i = 0; i < std::ceil(symbol.length() / 2); ++i) {
+            upper = symbol[i];
+            lower = symbol[symbol.length()-(i+1)]; // +1 to skip over '\0'
+            if (!(validator(upper) && validator(lower)))
+                return false;
+        }
+
+        return true;
     }
 
-    bool symbol_isnumeric(std::string& symbol) {
+    bool symbol_isnumeric(const std::string& symbol) {
         bool result = false;
 
         // Byte array might be numeric if  any chars
@@ -103,7 +115,7 @@ namespace vixen::symbols {
 
         // Byte array is numeric if only digits are
         // found in the sequence.
-        for (char ch : symbol) {
+        for (const char& ch : symbol) {
             // If parsing for base 10, binary or octal.
             if (base_notation == 0 || base_notation == 98 || base_notation == 111) {
                 if (!char_in_string(ch, "1234567890-_.xdbo"))
@@ -119,14 +131,20 @@ namespace vixen::symbols {
         return (std::ranges::count(symbol.begin(), symbol.end(), '.') < 2);
     }
 
-    bool symbol_ispunc(std::string& symbol) {
-        return
-            symbol.length() > 0
-            && !char_isnamechar(symbol[0])
-            && !char_isnamechar(symbol[symbol.length()-1]);
+    bool symbol_ispunc(const std::string& symbol) {
+        if (symbol.length() == 0) return false;
+
+        char upper, lower;
+        for (int i = 0; i < std::ceil(symbol.length() / 2); ++i) {
+            upper = symbol[i];
+            lower = symbol[symbol.length()-(i+1)];
+            if (char_isnamechar(upper) || char_isnamechar(lower))
+                return false;
+        }
+        return true;
     }
 
-    bool symbol_isstrsym(std::string& symbol) {
+    bool symbol_isstrsym(const std::string& symbol) {
         std::string stringsyms[] = {"'", "'''", "`", "```", "\"", "\"\"\""};
 
         if (symbol.length() < 1)
@@ -139,18 +157,18 @@ namespace vixen::symbols {
         return false;
     }
 
-    bool symbol_istermed(std::string& symbol, char next) {
+    bool symbol_istermed(const std::string& symbol, const char next) {
         return
             symbol.length() > 0
             && !char_in_string(';', symbol)
             && char_istermchar(next);
     }
 
-    bool symbol_isvalidname(std::string& symbol, char next) {
+    bool symbol_next_isvalidname(const std::string& symbol, const char next) {
         return symbol_isname(symbol) && !char_ispuncchar(next);
     }
 
-    bool symbol_isvalidnum(std::string& symbol, char next) {
+    bool symbol_next_isvalidnum(const std::string& symbol, const char next) {
         // Some exceptions are made in the event
         // that the first char of a symbol might
         // be a '.' or the numeric might be signed
@@ -174,7 +192,7 @@ namespace vixen::symbols {
             || !char_ispuncchar(next);
     }
 
-    bool symbol_isvalidpunc(std::string& symbol, char next) {
+    bool symbol_next_isvalidpunc(const std::string& symbol, const char next) {
         return !(symbol_ispunc(symbol) && char_isnamechar(next));
     }
 
@@ -363,7 +381,7 @@ namespace vixen::symbols {
                     // Punctuation cannot exist in a name.
                     // Unless said name is numeric, then
                     // '.' is accepted.
-                    if (!symbol_isvalidname(symbol, head))
+                    if (!symbol_next_isvalidname(symbol, head))
                         break;
                     if (this->end())
                         break;
@@ -390,7 +408,7 @@ namespace vixen::symbols {
                         break;
                     if (char_istermchar(head))
                         break;
-                    if (!symbol_isvalidnum(symbol, head))
+                    if (!symbol_next_isvalidnum(symbol, head))
                         break;
                     if (this->end())
                         break;
@@ -426,7 +444,7 @@ namespace vixen::symbols {
                             break;
 
                         // Names cannot exist in puncutation.
-                        if (!symbol_isvalidpunc(symbol, head))
+                        if (!symbol_next_isvalidpunc(symbol, head))
                             break;
 
                         // String parsing has most likely
