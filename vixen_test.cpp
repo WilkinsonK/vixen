@@ -35,6 +35,13 @@ int main(void) {
     add_test("symbols::char_ispuncchar", test_vixen::symbols::test_char_ispuncchar);
     add_test("symbols::char_isstrchar", test_vixen::symbols::test_char_isstrchar);
     add_test("symbols::char_istermchar", test_vixen::symbols::test_char_istermchar);
+    add_test("symbols::symbol_isname", test_vixen::symbols::test_symbol_isname);
+    add_test("symbols::symbol_isnumeric", test_vixen::symbols::test_symbol_isnumeric);
+    add_test("symbols::symbol_ispunc", test_vixen::symbols::test_symbol_ispunc);
+    add_test("symbols::symbol_isstrsym", test_vixen::symbols::test_symbol_isstrsym);
+    add_test("symbols::symbol_istermed", test_vixen::symbols::test_symbol_istermed);
+    add_test("symbols::symbol_next_isvalidname", test_vixen::symbols::test_symbol_next_isvalidname);
+    add_test("symbols::symbol_next_isvalidnum", test_vixen::symbols::test_symbol_next_isvalidnum);
 
     dump_header();
     attempt_all();

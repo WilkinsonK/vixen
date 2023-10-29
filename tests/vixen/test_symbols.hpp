@@ -121,4 +121,59 @@ namespace test_vixen::symbols {
     void test_char_istermchar() {
         assert(char_istermchar(';') == 1, "';' should be a valid line terminating character.");
     }
+
+    void test_symbol_isname() {
+        assert(symbol_isname("fibonacci") == 1, "'fibonacci' should be a valid name symbol.");
+        assert(symbol_isname("f&bonacci") == 0, "'f&bonacci' should not be a valid name symbol; names must not contain punctuation.");
+        assert(symbol_isname("0ibonacci") == 0, "'0ibonacci' should not be a valid name symbol; names must not start with digits.");
+    }
+
+    void test_symbol_isnumeric() {
+        std::string valid_symbols[] = {
+            ".4",
+            "0x5",
+            "0o77",
+            "0b1011",
+            "3.14",
+            "-1",
+            "339",
+            "100_000"
+        };
+
+        for (auto const& symbol : valid_symbols)
+            assert(symbol_isnumeric(symbol) == 1, "'{}' should be a valid numberical symbol.", symbol);
+    }
+
+    void test_symbol_ispunc() {
+        assert(symbol_ispunc("") == 0, "Empty string is not a valid symbol.");
+        assert(symbol_ispunc("fibonacci") == 0, "'fibonacci' should not be a valid punctuation symbol.");
+        assert(symbol_ispunc("0\%alpha") == 0, "Punctuation cannot contain alpha numeric characters.");
+        assert(symbol_ispunc("%&") == 1, "'%&' should be a valid punctuation symbol.");
+    }
+
+    void test_symbol_isstrsym() {
+        std::string valid_stringsyms[] = {
+            "'", "'''", "`", "```", "\"", "\"\"\""};
+
+        for (auto const& symbol : valid_stringsyms)
+            assert(symbol_isstrsym(symbol) == 1, "'{}' should be a valid string symbol.", symbol);
+    }
+
+    void test_symbol_istermed() {
+        assert(symbol_istermed("na;me", ';') == 0, "'na;me' should not be valid terminated symbol; termination character in symbol.");
+        assert(symbol_istermed("nam", 'e') == 0, "Next character 'e' should not be valid termination character.");
+        assert(symbol_istermed("name", ';') == 1, "'name' is terminated by next character ';'.");
+    }
+
+    void test_symbol_next_isvalidname() {
+        assert(symbol_next_isvalidname("gregory", '+') == 0, "'+' is not compatible for name symbol.");
+        assert(symbol_next_isvalidname("nam", 'e') == 1, "'nam' with 'e' should compose a valid name.");
+    }
+
+    void test_symbol_next_isvalidnum() {
+        assert(symbol_next_isvalidnum(".", '0') == 1, "'.0' should create a valid numerical symbol.");
+        assert(symbol_next_isvalidnum("0x", 'f') == 1, "Hexidecimal numericals should allow for alpha characters.");
+        assert(symbol_next_isvalidnum("-", '1') == 1, "'-' should be valid when the next character is numeric.");
+        assert(symbol_next_isvalidnum("12_", '7') == 1, "'12_' and '7' should compose a valid numerical symbol.");
+    }
 }
