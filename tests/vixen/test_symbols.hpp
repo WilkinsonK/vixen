@@ -221,4 +221,59 @@ namespace test_vixen::symbols {
             }
         }
     }
+
+    void test_parser_parse_expected() {
+        RawParser p = setup_parser();
+        TRIPLET(Symbol) symbols_expected[] = {
+            {5, 1, "sx"},
+            {5, 3, ":"},
+            {5, 5, "int"},
+            {5, 9, "="},
+            {5, 11, "0"},
+            {5, 12, ";"},
+            {6, 1, "cx"},
+            {6, 3, ":"},
+            {6, 5, "str"},
+            {6, 9, "="},
+            {6, 11, "\'\'\'"},
+            {6, 14, "d%\'-\'`"},
+            {6, 20, "\'\'\'"},
+            {6, 23, ";"},
+            {7, 1, "kv"},
+            {7, 3, ":"},
+            {7, 5, "str"},
+            {7, 9, "="},
+            {7, 11, "\""},
+            {7, 12, "{interpol} this"},
+            {7, 27, "\""},
+            {7, 28, ";"},
+            {8, 1, "x"},
+            {8, 2, "++"},
+            {8, 4, ";"},
+            {8, 6, "s"},
+            {8, 7, ":"},
+            {8, 9, "flt"},
+            {8, 13, "="},
+            {8, 15, "49.9"},
+            {8, 19, ".3"},
+            {8, 21, ";"},
+            {11, 1, "EOF"},
+        };
+
+        for (auto const& expected : symbols_expected) {
+            auto const& parsed = p.next();
+            auto const& [exlineno, excolumn, exsymbol] = expected;
+            auto const& [prlineno, prcolumn, prsymbol] = parsed;
+
+            assert(
+                expected == parsed,
+                "Expected '{}' @({}, {}). Got '{}' @({}, {})",
+                exsymbol,
+                exlineno,
+                excolumn,
+                prsymbol,
+                prlineno,
+                prcolumn);
+        }
+    }
 }
