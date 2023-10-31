@@ -1,3 +1,4 @@
+#include <format>
 #include <fstream>
 #include <iostream>
 
@@ -27,17 +28,27 @@ void usage(VixenNamespace vxn) {
         << std::endl;
 };
 
-void print_error(VixenNamespace vxn, const std::string message) {
-    std::cerr << vxn.exec << ": error: " << message << std::endl;
+template <class... Args>
+void print_error(
+    VixenNamespace vxn,
+    const std::string& message,
+    Args&&... args) {
+
+    std::cerr
+        << vxn.exec << ": error: "
+        << std::vformat(message, std::make_format_args(args...))
+        << std::endl;
 }
 
+template <class... Args>
 void panic(
     VixenNamespace vxn,
     const std::string message,
     int exit_code = 1,
-    bool show_help = false) {
+    bool show_help = false,
+    Args&& ...args) {
 
-    print_error(vxn, message);
+    print_error(vxn, message, args...);
     if (show_help)
         usage(vxn);
     exit(exit_code);
@@ -51,7 +62,6 @@ std::string_view parse_option(
             if (it + 1 != end)
                 return *(it + 1);
     }
-    
     return "";
 }
 
