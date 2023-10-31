@@ -28,7 +28,7 @@ class TestAssertionError : public std::exception {
         }
 };
 
-// Register a test case to be used later.
+// Add a test case to the registry.
 void add_test(const std::string& name, TestCaseFunc tc) {
     TestCaseRegistry[name] = tc;
 }
@@ -46,7 +46,7 @@ void assert(const int res, const std::string& reason, Args&&... args) {
 void assert_noerr(void(*process)(), const std::string& message) {
     try {
         process();
-    } catch (std::exception& err) {
+    } catch (const std::exception& err) {
         assert(false, "assert_noerr failed with message '{}'. Got '{}'", message, err.what());
     }
 }
