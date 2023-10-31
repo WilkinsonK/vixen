@@ -224,7 +224,6 @@ namespace test_vixen::symbols {
 
     void test_parser_parse_expected() {
         RawParser p = setup_parser();
-
         TRIPLET(Symbol) symbols_expected[] = {
             {5, 1, "sx"},
             {5, 3, ":"},
