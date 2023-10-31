@@ -30,16 +30,25 @@ test          Run all tests.
 #### C++ Standard 20
 This project, was first ported from the prototype into **C++** when
 C++20 was available. Love it or hate it, the author of Vixen likes
-to make use of the latest tools when they are available.
+to make use of the latest tools when they are available. The compiler
+of choice is going to be GCC where available (v13.2.1).
+
+```
+$ gcc --version
+gcc (GCC) 13.2.1 20230728 (Red Hat 13.2.1-1)
+Copyright (C) 2023 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+```
 
 #### Meson Build System
-Development of this project requires the use of the **Meson** build
-system. Please see their [quickstart](https://mesonbuild.com/Quick-guide.html)
+Development of this project requires the use of the **Meson** (v1.2.1)
+build system. Please see their [quickstart](https://mesonbuild.com/Quick-guide.html)
 guide for details on how install and basic usage.
 
 ```bash
-$ which meson
-/path/to/meson
+$ meson --version
+1.2.1
 ```
 
 ### Building Vixen
