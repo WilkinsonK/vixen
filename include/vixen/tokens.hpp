@@ -312,9 +312,7 @@ namespace vixen::tokens {
 
     class Lexer : public BasicSymbolParser<Token> {
         public:
-            Lexer() : BasicSymbolParser<Token>() {}
-            Lexer(std::string& data) : BasicSymbolParser<Token>(data) {}
-            Lexer(std::ifstream& file, const std::string& filename = "") : BasicSymbolParser<Token>(file, filename) {}
+            BasicSymbolParser__init__(Lexer, Token)
 
             Token next() {
                 Lineno lineno;
