@@ -43,6 +43,14 @@ void assert(const int res, const std::string& reason, Args&&... args) {
     throw TestAssertionError(reason, args...);
 }
 
+void assert_noerr(void(*process)(), const std::string& message) {
+    try {
+        process();
+    } catch (std::exception& err) {
+        assert(false, "assert_noerr failed with message '{}'. Got '{}'", message, err.what());
+    }
+}
+
 // Try running the test case. Writes to stderr if
 // the test case fails.
 void attempt(const std::string& name) {
