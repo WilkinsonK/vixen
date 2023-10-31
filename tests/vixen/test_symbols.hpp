@@ -7,21 +7,31 @@ namespace test_vixen::symbols {
     using namespace std;
     using namespace vixen::symbols;
 
+    RawParser setup_parser() {
+        const std::string file_name("examples/test_symbols.vxn");
+        ifstream file(file_name);
+        assert(file.is_open(), "Could not open test file '{}'", file_name);
+
+        RawParser parser(file, file_name);
+        file.close();
+        return parser;
+    }
+
     void test_string_contains_char() {
-        assert(char_in_string('c', "charlie") == 1, "'c' is present but not found in 'charlie'.");
-        assert(char_in_string('*', "starlord") != 1, "'*' was found in 'starlord'.");
+        assert(!char_in_string('*', "starlord"), "'*' was found in 'starlord'.");
+        assert(char_in_string('c', "charlie"), "'c' is present but not found in 'charlie'.");
     }
 
     void test_char_iscomment() {
-        assert(char_iscomment('#') == 1, "'#' should be valid comment character.");
-        assert(char_iscomment('@') == 0, "'@' should not be valid comment character.");
+        assert(!char_iscomment('@'), "'@' should not be valid comment character.");
+        assert(char_iscomment('#'), "'#' should be valid comment character.");
     }
 
     void test_char_isdigitchar() {
         for (auto const& ch : "1234567890") {
             if (ch == '\0')
                 continue;
-            assert(char_isdigitchar(ch) == 1, "'{}' should be a valid digit character.", ch);
+            assert(char_isdigitchar(ch), "'{}' should be a valid digit character.", ch);
         }
     }
 
@@ -35,7 +45,7 @@ namespace test_vixen::symbols {
         for (auto const& ch : chars) {
             if (ch == '\0')
                 continue;
-            assert(char_isdigitext(ch) == 1, "'{}' should be valid digit extension char.", ch);
+            assert(char_isdigitext(ch), "'{}' should be valid digit extension char.", ch);
         }
     }
 
@@ -43,7 +53,7 @@ namespace test_vixen::symbols {
         for (auto const& ch : "-_.bdxo") {
             if (ch == '\0')
                 continue;
-            assert(char_isdigitsep(ch) == 1, "'{}' should be a valid digit separation char.", ch);
+            assert(char_isdigitsep(ch), "'{}' should be a valid digit separation char.", ch);
         }
     }
 
@@ -51,7 +61,7 @@ namespace test_vixen::symbols {
         for (auto const& ch : ")}][{(") {
             if (ch == '\0')
                 continue;
-            assert(char_isgroupchar(ch) == 1, "'{}' should be a valid grouping character.", ch);
+            assert(char_isgroupchar(ch), "'{}' should be a valid grouping character.", ch);
         }
     }
 
@@ -67,25 +77,25 @@ namespace test_vixen::symbols {
         for (auto const& ch : valid_chars) {
             if (ch == '\0')
                 continue;
-            assert(char_isnamechar(ch) == 1, "'{}' should be a valid name character.", ch);
+            assert(char_isnamechar(ch), "'{}' should be a valid name character.", ch);
         }
 
         for (auto const& ch : invalid_chars) {
             if (ch == '\0')
                 continue;
-            assert(char_isnamechar(ch) == 0, "'{}' should not be a valid name character.", ch);
+            assert(!char_isnamechar(ch), "'{}' should not be a valid name character.", ch);
         }
     }
 
     void test_char_isnewline() {
-        assert(char_isnewline('\n') == 1, "'\\n' should be a valid newline character.");
+        assert(char_isnewline('\n'), "'\\n' should be a valid newline character.");
     }
 
     void test_char_isnoparse() {
         for (auto const& ch : " \t\n\r\v\f") {
             if (ch == '\0')
                 continue;
-            assert(char_isnoparse(ch) == 1, "'{}' should be valid whitespace.", ch);
+            assert(char_isnoparse(ch), "'{}' should be valid whitespace.", ch);
         }
     }
 
@@ -100,13 +110,13 @@ namespace test_vixen::symbols {
         for (auto const& ch : valid_chars) {
             if (ch == '\0')
                 continue;
-            assert(char_ispuncchar(ch) == 1, "'{}' should be a valid punctuation character.", ch);
+            assert(char_ispuncchar(ch), "'{}' should be a valid punctuation character.", ch);
         }
 
         for (auto const& ch : invalid_chars) {
             if (ch == '\0')
                 continue;
-            assert(char_ispuncchar(ch) == 0, "'{}' should not be a valid punctuation character.", ch);
+            assert(!char_ispuncchar(ch), "'{}' should not be a valid punctuation character.", ch);
         }
     }
 
@@ -114,18 +124,18 @@ namespace test_vixen::symbols {
         for (auto const& ch : "'`\"") {
             if (ch == '\0')
                 continue;
-            assert(char_isstrchar(ch) == 1, "'{}' should be a valid string annotation.", ch);
+            assert(char_isstrchar(ch), "'{}' should be a valid string annotation.", ch);
         }
     }
 
     void test_char_istermchar() {
-        assert(char_istermchar(';') == 1, "';' should be a valid line terminating character.");
+        assert(char_istermchar(';'), "';' should be a valid line terminating character.");
     }
 
     void test_symbol_isname() {
-        assert(symbol_isname("fibonacci") == 1, "'fibonacci' should be a valid name symbol.");
-        assert(symbol_isname("f&bonacci") == 0, "'f&bonacci' should not be a valid name symbol; names must not contain punctuation.");
-        assert(symbol_isname("0ibonacci") == 0, "'0ibonacci' should not be a valid name symbol; names must not start with digits.");
+        assert(!symbol_isname("f&bonacci"), "'f&bonacci' should not be a valid name symbol; names must not contain punctuation.");
+        assert(!symbol_isname("0ibonacci"), "'0ibonacci' should not be a valid name symbol; names must not start with digits.");
+        assert(symbol_isname("fibonacci"), "'fibonacci' should be a valid name symbol.");
     }
 
     void test_symbol_isnumeric() {
@@ -141,14 +151,14 @@ namespace test_vixen::symbols {
         };
 
         for (auto const& symbol : valid_symbols)
-            assert(symbol_isnumeric(symbol) == 1, "'{}' should be a valid numberical symbol.", symbol);
+            assert(symbol_isnumeric(symbol), "'{}' should be a valid numberical symbol.", symbol);
     }
 
     void test_symbol_ispunc() {
-        assert(symbol_ispunc("") == 0, "Empty string is not a valid symbol.");
-        assert(symbol_ispunc("fibonacci") == 0, "'fibonacci' should not be a valid punctuation symbol.");
-        assert(symbol_ispunc("0\%alpha") == 0, "Punctuation cannot contain alpha numeric characters.");
-        assert(symbol_ispunc("%&") == 1, "'%&' should be a valid punctuation symbol.");
+        assert(!symbol_ispunc(""), "Empty string is not a valid symbol.");
+        assert(!symbol_ispunc("fibonacci"), "'fibonacci' should not be a valid punctuation symbol.");
+        assert(!symbol_ispunc("0\%alpha"), "Punctuation cannot contain alpha numeric characters.");
+        assert(symbol_ispunc("%&"), "'%&' should be a valid punctuation symbol.");
     }
 
     void test_symbol_isstrsym() {
@@ -156,24 +166,59 @@ namespace test_vixen::symbols {
             "'", "'''", "`", "```", "\"", "\"\"\""};
 
         for (auto const& symbol : valid_stringsyms)
-            assert(symbol_isstrsym(symbol) == 1, "'{}' should be a valid string symbol.", symbol);
+            assert(symbol_isstrsym(symbol), "'{}' should be a valid string symbol.", symbol);
     }
 
     void test_symbol_istermed() {
-        assert(symbol_istermed("na;me", ';') == 0, "'na;me' should not be valid terminated symbol; termination character in symbol.");
-        assert(symbol_istermed("nam", 'e') == 0, "Next character 'e' should not be valid termination character.");
-        assert(symbol_istermed("name", ';') == 1, "'name' is terminated by next character ';'.");
+        assert(!symbol_istermed("na;me", ';'), "'na;me' should not be valid terminated symbol; termination character in symbol.");
+        assert(!symbol_istermed("nam", 'e'), "Next character 'e' should not be valid termination character.");
+        assert(symbol_istermed("name", ';'), "'name' is terminated by next character ';'.");
     }
 
     void test_symbol_next_isvalidname() {
-        assert(symbol_next_isvalidname("gregory", '+') == 0, "'+' is not compatible for name symbol.");
-        assert(symbol_next_isvalidname("nam", 'e') == 1, "'nam' with 'e' should compose a valid name.");
+        assert(!symbol_next_isvalidname("gregory", '+'), "'+' is not compatible for name symbol.");
+        assert(symbol_next_isvalidname("nam", 'e'), "'nam' with 'e' should compose a valid name.");
     }
 
     void test_symbol_next_isvalidnum() {
-        assert(symbol_next_isvalidnum(".", '0') == 1, "'.0' should create a valid numerical symbol.");
-        assert(symbol_next_isvalidnum("0x", 'f') == 1, "Hexidecimal numericals should allow for alpha characters.");
-        assert(symbol_next_isvalidnum("-", '1') == 1, "'-' should be valid when the next character is numeric.");
-        assert(symbol_next_isvalidnum("12_", '7') == 1, "'12_' and '7' should compose a valid numerical symbol.");
+        assert(symbol_next_isvalidnum(".", '0'), "'.0' should create a valid numerical symbol.");
+        assert(symbol_next_isvalidnum("0x", 'f'), "Hexidecimal numericals should allow for alpha characters.");
+        assert(symbol_next_isvalidnum("-", '1'), "'-' should be valid when the next character is numeric.");
+        assert(symbol_next_isvalidnum("12_", '7'), "'12_' and '7' should compose a valid numerical symbol.");
+    }
+
+    void test_parser_no_error() {
+        assert_noerr(
+            [](){setup_parser();},
+            "Requesting parser should not throw system error.");
+        assert_noerr(
+            [](){
+                RawParser p = setup_parser();
+                while (!p.end()) p.next();
+            },
+            "Symbol parsing from input should not throw a system error."
+        );
+    }
+
+    void test_parser_nowhitespace() {
+        RawParser p = setup_parser();
+
+        // Validates that an individual symbol,
+        // that is not a string symbol, does not
+        // contain any whitespace characters.
+        auto assert_nowhitespace = [](const Symbol& symbol) {
+            for (auto const& ch : " \t\n\r\v\f") {
+                if (ch == '\0')
+                    continue;
+                assert(!(char_in_string(ch, symbol)), "'{}' should not exist in non-string symbol '{}'.", ch, symbol);
+            }
+        };
+
+        while (!p.end()) {
+            auto const [lineno, column, symbol] = p.next();
+            if (!p.string_mode()) {
+                assert_nowhitespace(symbol);
+            }
+        }
     }
 }

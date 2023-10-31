@@ -42,12 +42,19 @@ int main(void) {
     add_test("symbols::symbol_istermed", test_vixen::symbols::test_symbol_istermed);
     add_test("symbols::symbol_next_isvalidname", test_vixen::symbols::test_symbol_next_isvalidname);
     add_test("symbols::symbol_next_isvalidnum", test_vixen::symbols::test_symbol_next_isvalidnum);
+    add_test("symbols::parser_no_error", test_vixen::symbols::test_parser_no_error);
+    add_test("symbols::parser_no_whitespace", test_vixen::symbols::test_parser_nowhitespace);
 
     // Vixen Token Parsing Suite.
     // ------------------------------------------
+    // TLDR; this suite is basically just an
+    // extension of the symbols suite.
     // `tokens.hpp` is built off of our symbols
     // suite as a more specialized parser where
     // symbols are categorized as `Token` objects.
+    // The `Token`s are used as classifiers to
+    // assist in organizing our symbols at parse
+    // time.
 
     dump_header();
     attempt_all();
