@@ -9,4 +9,5 @@ __pycache__/
 # C project and tooling artifacts.
 builddir/
 build/
+build_release/
 vgcore.*
