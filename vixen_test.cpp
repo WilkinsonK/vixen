@@ -43,6 +43,12 @@ int main(void) {
     add_test("symbols::symbol_next_isvalidname", test_vixen::symbols::test_symbol_next_isvalidname);
     add_test("symbols::symbol_next_isvalidnum", test_vixen::symbols::test_symbol_next_isvalidnum);
 
+    // Vixen Token Parsing Suite.
+    // ------------------------------------------
+    // `tokens.hpp` is built off of our symbols
+    // suite as a more specialized parser where
+    // symbols are categorized as `Token` objects.
+
     dump_header();
     attempt_all();
     dump_results();
