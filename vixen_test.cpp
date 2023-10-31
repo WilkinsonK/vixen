@@ -44,6 +44,7 @@ int main(void) {
     add_test("symbols::symbol_next_isvalidnum", test_vixen::symbols::test_symbol_next_isvalidnum);
     add_test("symbols::parser_no_error", test_vixen::symbols::test_parser_no_error);
     add_test("symbols::parser_no_whitespace", test_vixen::symbols::test_parser_nowhitespace);
+    add_test("symbols::parser_parse_expected", test_vixen::symbols::test_parser_parse_expected);
 
     // Vixen Token Parsing Suite.
     // ------------------------------------------
@@ -56,6 +57,11 @@ int main(void) {
     // assist in organizing our symbols at parse
     // time.
 
+    // Current driver code.
+    // TODO: implement CLI which will allow for
+    // running specified tests or all tests based
+    // on user input. Would like to use glob
+    // patter matching for test lookup.
     dump_header();
     attempt_all();
     dump_results();
