@@ -47,8 +47,8 @@ clean() {
 }
 
 test() {
-    echo_performance test
-    build && time build/vixen_test $@
+    build
+    echo_performance test && time build/vixen_test $@
 }
 
 if [[ $# = 0 ]];
