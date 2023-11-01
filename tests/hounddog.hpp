@@ -128,6 +128,15 @@ namespace hounddog {
                 ids.push_back(id);
         }
 
+        if (!ids.size()) {
+            std::cerr
+                << "error: no test case ids match pattern '"
+                << pattern
+                << "'."
+                << std::endl;
+            exit(1);
+        }
+
         dump_title(trs, os);
         os
         << "TESTING: '"
@@ -137,6 +146,7 @@ namespace hounddog {
 
         for (auto const& id : ids)
             attempt_one(trs, id, os);
+        dump_result(trs, os);
     }
 
     // Attempt all registered test cases.

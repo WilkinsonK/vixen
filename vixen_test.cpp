@@ -1,7 +1,7 @@
 #include "tests/hounddog.hpp"
 #include "tests/test_vixen.hpp"
 
-int main(void) {
+int main(int argc, const char* argv[]) {
     hounddog::TestRunStats trs;
 
     hounddog::assert(1 != 2, "1 must not equal 2.");
@@ -58,9 +58,20 @@ int main(void) {
     // time.
 
     // Current driver code.
-    // TODO: implement CLI which will allow for
-    // running specified tests or all tests based
-    // on user input. Would like to use glob
-    // patter matching for test lookup.
-    hounddog::attempt(trs, "*", std::cout);
+    switch (argc) {
+        case 1:
+            hounddog::attempt_all(trs, std::cout);
+            break;
+        case 2:
+            hounddog::attempt(trs, argv[1], std::cout);
+            break;
+        default:
+            std::cerr
+                << "error: "
+                << argv[0] << " accepts 1 or 0 arguments (pattern?)"
+                << std::endl;
+            return 1;
+    }
+
+    return 0;
 }
