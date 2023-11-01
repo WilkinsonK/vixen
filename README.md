@@ -33,12 +33,9 @@ C++20 was available. Love it or hate it, the author of Vixen likes
 to make use of the latest tools when they are available. The compiler
 of choice is going to be **GCC** where available (v13.2.1).
 
-```
+```bash
 $ gcc --version
 gcc (GCC) 13.2.1 20230728 (Red Hat 13.2.1-1)
-Copyright (C) 2023 Free Software Foundation, Inc.
-This is free software; see the source for copying conditions.  There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ```
 
 #### Meson Build System
