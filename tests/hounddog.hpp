@@ -12,9 +12,12 @@
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
+#include <vector>
 
 #include <sys/ioctl.h>
 #include <unistd.h>
+
+#include "ggm.hpp"
 
 namespace hounddog {
     typedef void(*TestCaseFunc)(void);
@@ -52,8 +55,9 @@ namespace hounddog {
     void assert(const bool result, const std::string& reason, Args&&... args);
     void assert_error(void(*wrapped)(), const std::string& reason);
     void assert_noerr(void(*wrapped)(), const std::string& reason);
-    void attempt(TestRunStats& trs, const std::string& id, std::ostream& os);
+    void attempt(TestRunStats& trs, const std::string& pattern, std::ostream& os);
     void attempt_all(TestRunStats& trs, std::ostream& os);
+    void attempt_one(TestRunStats& trs, const std::string& id, std::ostream& os);
     template<class... Args>
     void dump_header(
         TestRunStats& trs,
@@ -113,10 +117,41 @@ namespace hounddog {
         }
     }
 
+    // Attempt registered test cases whos id
+    // matches the pattern.
+    void attempt(TestRunStats& trs, const std::string& pattern, std::ostream& os) {
+        std::vector<std::string> ids;
+
+        // Collect matching ids.
+        for (auto const& [id, _] : trs.registry) {
+            if (ggm::gitignore_glob_match(id.c_str(), pattern.c_str()))
+                ids.push_back(id);
+        }
+
+        dump_title(trs, os);
+        os
+        << "TESTING: '"
+        << pattern
+        << "' (" << ids.size() << "/" << trs.registry.size() << ")"
+        << std::endl;
+
+        for (auto const& id : ids)
+            attempt_one(trs, id, os);
+    }
+
+    // Attempt all registered test cases.
+    void attempt_all(TestRunStats& trs, std::ostream& os) {
+        dump_title(trs, os);
+        os << "TESTING: all" << std::endl;
+        for (auto const& [id, _] : trs.registry)
+            attempt_one(trs, id, os);
+        dump_result(trs, os);
+    }
+
     // Try running the test case associated with
     // the ID. Writes to output stream if the test
     // case fails.
-    void attempt(TestRunStats& trs, const std::string& id, std::ostream& os) {
+    void attempt_one(TestRunStats& trs, const std::string& id, std::ostream& os) {
         os << "attempting test \"" << id << "\": ";
         trs.tests_attempted++;
 
@@ -132,16 +167,6 @@ namespace hounddog {
             << "\terror: " << err.what() << "\n";
         }
         os << std::endl;
-    }
-
-    // Attempt all registered test cases.
-    void attempt_all(TestRunStats& trs, std::ostream& os) {
-        dump_title(trs, os);
-        os << "TESTING: all" << std::endl;
-        for (auto const& [id, _] : trs.registry) {
-            attempt(trs, id, os);
-        }
-        dump_result(trs, os);
     }
 
     // Dump the header to string to an output
