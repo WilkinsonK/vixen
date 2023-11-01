@@ -4,15 +4,12 @@
 #include "include/vixen/symbols.hpp"
 
 namespace test_vixen::symbols {
-    using namespace std;
-
-    using namespace hounddog;
     using namespace vixen::symbols;
 
     RawParser setup_parser() {
         const std::string file_name("examples/test_symbols.vxn");
         ifstream file(file_name);
-        assert(file.is_open(), "Could not open test file '{}'", file_name);
+        hounddog::assert(file.is_open(), "Could not open test file '{}'", file_name);
 
         RawParser parser(file, file_name);
         file.close();
@@ -20,20 +17,20 @@ namespace test_vixen::symbols {
     }
 
     void test_string_contains_char() {
-        assert(!char_in_string('*', "starlord"), "'*' was found in 'starlord'.");
-        assert(char_in_string('c', "charlie"), "'c' is present but not found in 'charlie'.");
+        hounddog::assert(!char_in_string('*', "starlord"), "'*' was found in 'starlord'.");
+        hounddog::assert(char_in_string('c', "charlie"), "'c' is present but not found in 'charlie'.");
     }
 
     void test_char_iscomment() {
-        assert(!char_iscomment('@'), "'@' should not be valid comment character.");
-        assert(char_iscomment('#'), "'#' should be valid comment character.");
+        hounddog::assert(!char_iscomment('@'), "'@' should not be valid comment character.");
+        hounddog::assert(char_iscomment('#'), "'#' should be valid comment character.");
     }
 
     void test_char_isdigitchar() {
         for (auto const& ch : "1234567890") {
             if (ch == '\0')
                 continue;
-            assert(char_isdigitchar(ch), "'{}' should be a valid digit character.", ch);
+            hounddog::assert(char_isdigitchar(ch), "'{}' should be a valid digit character.", ch);
         }
     }
 
@@ -47,7 +44,7 @@ namespace test_vixen::symbols {
         for (auto const& ch : chars) {
             if (ch == '\0')
                 continue;
-            assert(char_isdigitext(ch), "'{}' should be valid digit extension char.", ch);
+            hounddog::assert(char_isdigitext(ch), "'{}' should be valid digit extension char.", ch);
         }
     }
 
@@ -55,7 +52,7 @@ namespace test_vixen::symbols {
         for (auto const& ch : "-_.bdxo") {
             if (ch == '\0')
                 continue;
-            assert(char_isdigitsep(ch), "'{}' should be a valid digit separation char.", ch);
+            hounddog::assert(char_isdigitsep(ch), "'{}' should be a valid digit separation char.", ch);
         }
     }
 
@@ -63,7 +60,7 @@ namespace test_vixen::symbols {
         for (auto const& ch : ")}][{(") {
             if (ch == '\0')
                 continue;
-            assert(char_isgroupchar(ch), "'{}' should be a valid grouping character.", ch);
+            hounddog::assert(char_isgroupchar(ch), "'{}' should be a valid grouping character.", ch);
         }
     }
 
@@ -79,25 +76,25 @@ namespace test_vixen::symbols {
         for (auto const& ch : valid_chars) {
             if (ch == '\0')
                 continue;
-            assert(char_isnamechar(ch), "'{}' should be a valid name character.", ch);
+            hounddog::assert(char_isnamechar(ch), "'{}' should be a valid name character.", ch);
         }
 
         for (auto const& ch : invalid_chars) {
             if (ch == '\0')
                 continue;
-            assert(!char_isnamechar(ch), "'{}' should not be a valid name character.", ch);
+            hounddog::assert(!char_isnamechar(ch), "'{}' should not be a valid name character.", ch);
         }
     }
 
     void test_char_isnewline() {
-        assert(char_isnewline('\n'), "'\\n' should be a valid newline character.");
+        hounddog::assert(char_isnewline('\n'), "'\\n' should be a valid newline character.");
     }
 
     void test_char_isnoparse() {
         for (auto const& ch : " \t\n\r\v\f") {
             if (ch == '\0')
                 continue;
-            assert(char_isnoparse(ch), "'{}' should be valid whitespace.", ch);
+            hounddog::assert(char_isnoparse(ch), "'{}' should be valid whitespace.", ch);
         }
     }
 
@@ -112,13 +109,13 @@ namespace test_vixen::symbols {
         for (auto const& ch : valid_chars) {
             if (ch == '\0')
                 continue;
-            assert(char_ispuncchar(ch), "'{}' should be a valid punctuation character.", ch);
+            hounddog::assert(char_ispuncchar(ch), "'{}' should be a valid punctuation character.", ch);
         }
 
         for (auto const& ch : invalid_chars) {
             if (ch == '\0')
                 continue;
-            assert(!char_ispuncchar(ch), "'{}' should not be a valid punctuation character.", ch);
+            hounddog::assert(!char_ispuncchar(ch), "'{}' should not be a valid punctuation character.", ch);
         }
     }
 
@@ -126,18 +123,18 @@ namespace test_vixen::symbols {
         for (auto const& ch : "'`\"") {
             if (ch == '\0')
                 continue;
-            assert(char_isstrchar(ch), "'{}' should be a valid string annotation.", ch);
+            hounddog::assert(char_isstrchar(ch), "'{}' should be a valid string annotation.", ch);
         }
     }
 
     void test_char_istermchar() {
-        assert(char_istermchar(';'), "';' should be a valid line terminating character.");
+        hounddog::assert(char_istermchar(';'), "';' should be a valid line terminating character.");
     }
 
     void test_symbol_isname() {
-        assert(!symbol_isname("f&bonacci"), "'f&bonacci' should not be a valid name symbol; names must not contain punctuation.");
-        assert(!symbol_isname("0ibonacci"), "'0ibonacci' should not be a valid name symbol; names must not start with digits.");
-        assert(symbol_isname("fibonacci"), "'fibonacci' should be a valid name symbol.");
+        hounddog::assert(!symbol_isname("f&bonacci"), "'f&bonacci' should not be a valid name symbol; names must not contain punctuation.");
+        hounddog::assert(!symbol_isname("0ibonacci"), "'0ibonacci' should not be a valid name symbol; names must not start with digits.");
+        hounddog::assert(symbol_isname("fibonacci"), "'fibonacci' should be a valid name symbol.");
     }
 
     void test_symbol_isnumeric() {
@@ -153,14 +150,14 @@ namespace test_vixen::symbols {
         };
 
         for (auto const& symbol : valid_symbols)
-            assert(symbol_isnumeric(symbol), "'{}' should be a valid numberical symbol.", symbol);
+            hounddog::assert(symbol_isnumeric(symbol), "'{}' should be a valid numberical symbol.", symbol);
     }
 
     void test_symbol_ispunc() {
-        assert(!symbol_ispunc(""), "Empty string is not a valid symbol.");
-        assert(!symbol_ispunc("fibonacci"), "'fibonacci' should not be a valid punctuation symbol.");
-        assert(!symbol_ispunc("0\%alpha"), "Punctuation cannot contain alpha numeric characters.");
-        assert(symbol_ispunc("%&"), "'%&' should be a valid punctuation symbol.");
+        hounddog::assert(!symbol_ispunc(""), "Empty string is not a valid symbol.");
+        hounddog::assert(!symbol_ispunc("fibonacci"), "'fibonacci' should not be a valid punctuation symbol.");
+        hounddog::assert(!symbol_ispunc("0\%alpha"), "Punctuation cannot contain alpha numeric characters.");
+        hounddog::assert(symbol_ispunc("%&"), "'%&' should be a valid punctuation symbol.");
     }
 
     void test_symbol_isstrsym() {
@@ -168,32 +165,32 @@ namespace test_vixen::symbols {
             "'", "'''", "`", "```", "\"", "\"\"\""};
 
         for (auto const& symbol : valid_stringsyms)
-            assert(symbol_isstrsym(symbol), "'{}' should be a valid string symbol.", symbol);
+            hounddog::assert(symbol_isstrsym(symbol), "'{}' should be a valid string symbol.", symbol);
     }
 
     void test_symbol_istermed() {
-        assert(!symbol_istermed("na;me", ';'), "'na;me' should not be valid terminated symbol; termination character in symbol.");
-        assert(!symbol_istermed("nam", 'e'), "Next character 'e' should not be valid termination character.");
-        assert(symbol_istermed("name", ';'), "'name' is terminated by next character ';'.");
+        hounddog::assert(!symbol_istermed("na;me", ';'), "'na;me' should not be valid terminated symbol; termination character in symbol.");
+        hounddog::assert(!symbol_istermed("nam", 'e'), "Next character 'e' should not be valid termination character.");
+        hounddog::assert(symbol_istermed("name", ';'), "'name' is terminated by next character ';'.");
     }
 
     void test_symbol_next_isvalidname() {
-        assert(!symbol_next_isvalidname("gregory", '+'), "'+' is not compatible for name symbol.");
-        assert(symbol_next_isvalidname("nam", 'e'), "'nam' with 'e' should compose a valid name.");
+        hounddog::assert(!symbol_next_isvalidname("gregory", '+'), "'+' is not compatible for name symbol.");
+        hounddog::assert(symbol_next_isvalidname("nam", 'e'), "'nam' with 'e' should compose a valid name.");
     }
 
     void test_symbol_next_isvalidnum() {
-        assert(symbol_next_isvalidnum(".", '0'), "'.0' should create a valid numerical symbol.");
-        assert(symbol_next_isvalidnum("0x", 'f'), "Hexidecimal numericals should allow for alpha characters.");
-        assert(symbol_next_isvalidnum("-", '1'), "'-' should be valid when the next character is numeric.");
-        assert(symbol_next_isvalidnum("12_", '7'), "'12_' and '7' should compose a valid numerical symbol.");
+        hounddog::assert(symbol_next_isvalidnum(".", '0'), "'.0' should create a valid numerical symbol.");
+        hounddog::assert(symbol_next_isvalidnum("0x", 'f'), "Hexidecimal numericals should allow for alpha characters.");
+        hounddog::assert(symbol_next_isvalidnum("-", '1'), "'-' should be valid when the next character is numeric.");
+        hounddog::assert(symbol_next_isvalidnum("12_", '7'), "'12_' and '7' should compose a valid numerical symbol.");
     }
 
     void test_parser_no_error() {
-        assert_noerr(
+        hounddog::assert_noerr(
             [](){setup_parser();},
             "Requesting parser should not throw system error.");
-        assert_noerr(
+        hounddog::assert_noerr(
             [](){
                 RawParser p = setup_parser();
                 while (!p.end()) p.next();
@@ -212,7 +209,7 @@ namespace test_vixen::symbols {
             for (auto const& ch : " \t\n\r\v\f") {
                 if (ch == '\0')
                     continue;
-                assert(!(char_in_string(ch, symbol)), "'{}' should not exist in non-string symbol '{}'.", ch, symbol);
+                hounddog::assert(!(char_in_string(ch, symbol)), "'{}' should not exist in non-string symbol '{}'.", ch, symbol);
             }
         };
 
@@ -267,7 +264,7 @@ namespace test_vixen::symbols {
             auto const& [exlineno, excolumn, exsymbol] = expected;
             auto const& [prlineno, prcolumn, prsymbol] = parsed;
 
-            assert(
+            hounddog::assert(
                 expected == parsed,
                 "Expected '{}' @({}, {}). Got '{}' @({}, {})",
                 exsymbol,

@@ -1,9 +1,6 @@
 #include "tests/hounddog.hpp"
 #include "tests/test_vixen.hpp"
 
-using namespace hounddog;
-using namespace test_vixen;
-
 int main(void) {
     hounddog::TestRunStats trs({}, 0, 0);
 
