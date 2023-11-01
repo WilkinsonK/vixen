@@ -1,10 +1,13 @@
-#include "tests/vixen/test_testconf.hpp"
+#include "tests/hounddog.hpp"
 #include "tests/test_vixen.hpp"
 
+using namespace hounddog;
 using namespace test_vixen;
 
 int main(void) {
-    assert(1 != 2, "1 must not equal 2.");
+    hounddog::TestRunStats trs({}, 0, 0);
+
+    hounddog::assert(1 != 2, "1 must not equal 2.");
 
     // Vixen Front End Interface Components.
     // ------------------------------------------
@@ -23,28 +26,28 @@ int main(void) {
     // NOTICE: These tests are critical to the
     // foundation of our front-end. Without them,
     // our language might as well not work at all.
-    add_test("symbols::string_has_char", test_vixen::symbols::test_string_contains_char);
-    add_test("symbols::char_iscommment", test_vixen::symbols::test_char_iscomment);
-    add_test("symbols::char_isdigitchar", test_vixen::symbols::test_char_isdigitchar);
-    add_test("symbols::char_isdigittext", test_vixen::symbols::test_char_isdigittext);
-    add_test("symbols::char_isdigitsep", test_vixen::symbols::test_char_isdigitsep);
-    add_test("symbols::char_isgroupchar", test_vixen::symbols::test_char_isgroupchar);
-    add_test("symbols::char_isnamechar", test_vixen::symbols::test_char_isnamechar);
-    add_test("symbols::char_isnewline", test_vixen::symbols::test_char_isnewline);
-    add_test("symbols::char_isnoparse", test_vixen::symbols::test_char_isnoparse);
-    add_test("symbols::char_ispuncchar", test_vixen::symbols::test_char_ispuncchar);
-    add_test("symbols::char_isstrchar", test_vixen::symbols::test_char_isstrchar);
-    add_test("symbols::char_istermchar", test_vixen::symbols::test_char_istermchar);
-    add_test("symbols::symbol_isname", test_vixen::symbols::test_symbol_isname);
-    add_test("symbols::symbol_isnumeric", test_vixen::symbols::test_symbol_isnumeric);
-    add_test("symbols::symbol_ispunc", test_vixen::symbols::test_symbol_ispunc);
-    add_test("symbols::symbol_isstrsym", test_vixen::symbols::test_symbol_isstrsym);
-    add_test("symbols::symbol_istermed", test_vixen::symbols::test_symbol_istermed);
-    add_test("symbols::symbol_next_isvalidname", test_vixen::symbols::test_symbol_next_isvalidname);
-    add_test("symbols::symbol_next_isvalidnum", test_vixen::symbols::test_symbol_next_isvalidnum);
-    add_test("symbols::parser_no_error", test_vixen::symbols::test_parser_no_error);
-    add_test("symbols::parser_no_whitespace", test_vixen::symbols::test_parser_nowhitespace);
-    add_test("symbols::parser_parse_expected", test_vixen::symbols::test_parser_parse_expected);
+    hounddog::add_test(trs, "symbols::string_has_char", test_vixen::symbols::test_string_contains_char);
+    hounddog::add_test(trs, "symbols::char_iscommment", test_vixen::symbols::test_char_iscomment);
+    hounddog::add_test(trs, "symbols::char_isdigitchar", test_vixen::symbols::test_char_isdigitchar);
+    hounddog::add_test(trs, "symbols::char_isdigittext", test_vixen::symbols::test_char_isdigittext);
+    hounddog::add_test(trs, "symbols::char_isdigitsep", test_vixen::symbols::test_char_isdigitsep);
+    hounddog::add_test(trs, "symbols::char_isgroupchar", test_vixen::symbols::test_char_isgroupchar);
+    hounddog::add_test(trs, "symbols::char_isnamechar", test_vixen::symbols::test_char_isnamechar);
+    hounddog::add_test(trs, "symbols::char_isnewline", test_vixen::symbols::test_char_isnewline);
+    hounddog::add_test(trs, "symbols::char_isnoparse", test_vixen::symbols::test_char_isnoparse);
+    hounddog::add_test(trs, "symbols::char_ispuncchar", test_vixen::symbols::test_char_ispuncchar);
+    hounddog::add_test(trs, "symbols::char_isstrchar", test_vixen::symbols::test_char_isstrchar);
+    hounddog::add_test(trs, "symbols::char_istermchar", test_vixen::symbols::test_char_istermchar);
+    hounddog::add_test(trs, "symbols::symbol_isname", test_vixen::symbols::test_symbol_isname);
+    hounddog::add_test(trs, "symbols::symbol_isnumeric", test_vixen::symbols::test_symbol_isnumeric);
+    hounddog::add_test(trs, "symbols::symbol_ispunc", test_vixen::symbols::test_symbol_ispunc);
+    hounddog::add_test(trs, "symbols::symbol_isstrsym", test_vixen::symbols::test_symbol_isstrsym);
+    hounddog::add_test(trs, "symbols::symbol_istermed", test_vixen::symbols::test_symbol_istermed);
+    hounddog::add_test(trs, "symbols::symbol_next_isvalidname", test_vixen::symbols::test_symbol_next_isvalidname);
+    hounddog::add_test(trs, "symbols::symbol_next_isvalidnum", test_vixen::symbols::test_symbol_next_isvalidnum);
+    hounddog::add_test(trs, "symbols::parser_no_error", test_vixen::symbols::test_parser_no_error);
+    hounddog::add_test(trs, "symbols::parser_no_whitespace", test_vixen::symbols::test_parser_nowhitespace);
+    hounddog::add_test(trs, "symbols::parser_parse_expected", test_vixen::symbols::test_parser_parse_expected);
 
     // Vixen Token Parsing Suite.
     // ------------------------------------------
@@ -62,7 +65,7 @@ int main(void) {
     // running specified tests or all tests based
     // on user input. Would like to use glob
     // patter matching for test lookup.
-    dump_header();
-    attempt_all();
-    dump_results();
+    hounddog::dump_title(trs, std::cout);
+    hounddog::attempt_all(trs, std::cout);
+    hounddog::dump_result(trs, std::cout);
 }

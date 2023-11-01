@@ -1,10 +1,12 @@
 #include <sstream>
 
+#include "tests/hounddog.hpp"
 #include "include/vixen/symbols.hpp"
-#include "tests/vixen/test_testconf.hpp"
 
 namespace test_vixen::symbols {
     using namespace std;
+
+    using namespace hounddog;
     using namespace vixen::symbols;
 
     RawParser setup_parser() {
