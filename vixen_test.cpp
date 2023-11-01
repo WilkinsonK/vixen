@@ -1,5 +1,5 @@
 #include "tests/hounddog.hpp"
-#include "tests/test_vixen.hpp"
+#include "tests/vixen.hpp"
 
 int main(int argc, const char* argv[]) {
     hounddog::TestRunStats trs;
