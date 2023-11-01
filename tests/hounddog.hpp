@@ -1,7 +1,9 @@
 // Houndog
+// ------------------------------------------------------------------
 // Vixen Programming Language testing framework.
 // Author: Keenan W. Wilkinsonk
 // Date: 31 Oct 2023
+// ------------------------------------------------------------------
 // Adapted from original test_testconf.hpp, this header file defines
 // tools Vixen uses to test its internal API.
 #pragma once
@@ -20,8 +22,8 @@ namespace hounddog {
     // Test runtime statistics.
     struct TestRunStats {
         std::unordered_map<std::string, TestCaseFunc> registry;
-        uint tests_attempted;
-        uint tests_succeeded;
+        uint tests_attempted = 0;
+        uint tests_succeeded = 0;
     };
 
     // If some assertion failes, this error is

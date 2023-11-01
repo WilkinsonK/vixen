@@ -2,7 +2,7 @@
 #include "tests/test_vixen.hpp"
 
 int main(void) {
-    hounddog::TestRunStats trs({}, 0, 0);
+    hounddog::TestRunStats trs;
 
     hounddog::assert(1 != 2, "1 must not equal 2.");
 
