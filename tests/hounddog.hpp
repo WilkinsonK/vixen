@@ -141,7 +141,7 @@ namespace hounddog {
         os
         << "TESTING: '"
         << pattern
-        << "' (" << ids.size() << "/" << trs.registry.size() << ")"
+        << "' (" << ids.size() << "/" << trs.registry.size() << " available)"
         << std::endl;
 
         for (auto const& id : ids)
