@@ -65,7 +65,5 @@ int main(void) {
     // running specified tests or all tests based
     // on user input. Would like to use glob
     // patter matching for test lookup.
-    hounddog::dump_title(trs, std::cout);
     hounddog::attempt_all(trs, std::cout);
-    hounddog::dump_result(trs, std::cout);
 }

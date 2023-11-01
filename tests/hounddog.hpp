@@ -42,6 +42,25 @@ namespace hounddog {
             }
     };
 
+    void add_test(
+        TestRunStats& trs,
+        const std::string& id,
+        TestCaseFunc tc);
+    template <class... Args>
+    void assert(const bool result, const std::string& reason, Args&&... args);
+    void assert_error(void(*wrapped)(), const std::string& reason);
+    void assert_noerr(void(*wrapped)(), const std::string& reason);
+    void attempt(TestRunStats& trs, const std::string& id, std::ostream& os);
+    void attempt_all(TestRunStats& trs, std::ostream& os);
+    template<class... Args>
+    void dump_header(
+        TestRunStats& trs,
+        const std::string& title,
+        std::ostream& os,
+        Args&&... args);
+    void dump_result(TestRunStats& trs, std::ostream& os);
+    void dump_title(TestRunStats& trs, std::ostream& os);
+
     // Add a test to the registry.
     void add_test(
         TestRunStats& trs,
@@ -115,9 +134,11 @@ namespace hounddog {
 
     // Attempt all registered test cases.
     void attempt_all(TestRunStats& trs, std::ostream& os) {
+        dump_title(trs, os);
         for (auto const& [id, _] : trs.registry) {
             attempt(trs, id, os);
         }
+        dump_result(trs, os);
     }
 
     // Dump the header to string to an output
