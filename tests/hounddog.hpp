@@ -135,6 +135,7 @@ namespace hounddog {
     // Attempt all registered test cases.
     void attempt_all(TestRunStats& trs, std::ostream& os) {
         dump_title(trs, os);
+        os << "TESTING: all" << std::endl;
         for (auto const& [id, _] : trs.registry) {
             attempt(trs, id, os);
         }
@@ -174,7 +175,7 @@ namespace hounddog {
             os << "FAILURE: " << tests_failed << "\n";
 
         os
-        << "TOTAL: " << trs.tests_attempted
+        << "TOTAL:   " << trs.tests_attempted
         << " (" << std::setprecision(4) << success_percentage << "\% passing)"
         << std::endl;
     }
