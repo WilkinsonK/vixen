@@ -372,8 +372,7 @@ namespace vixen::symbols {
         }
 
         // Parse next name symbol.
-        TRIPLET(Symbol)
-        next_name() {
+        TRIPLET(Symbol) next_name() {
             std::string symbol("");
             uint column = this->column();
             uint lineno = this->lineno();
