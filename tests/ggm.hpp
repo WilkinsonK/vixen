@@ -7,7 +7,7 @@ namespace ggm {
     // Article author: Robert van Engelen
     // July 22nd 2023; Rev 31
     // Returns TRUE if text string matches gitignore-style glob pattern
-    int gitignore_glob_match(const char *text, const char *glob)
+    bool gitignore_glob_match(const char *text, const char *glob)
     {
       const char *text1_backup = NULL;
       const char *glob1_backup = NULL;
