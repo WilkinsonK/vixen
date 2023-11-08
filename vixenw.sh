@@ -30,13 +30,13 @@ echo_performance() {
 build() {
     echo_performance build
     [[ ! -d $VIXEN_BUILDDIR ]] && $VIXEN_BUILDSYS setup $VIXEN_BUILDDIR $VIXEN_DEVELOP_setupFLAGS
-    $VIXEN_BUILDSYS compile -C $VIXEN_BUILDDIR
+    $VIXEN_BUILDSYS compile -v -C $VIXEN_BUILDDIR
 }
 
 build_release() {
     echo_performance build
     [[ ! -d ${VIXEN_BUILDDIR}_release ]] && $VIXEN_BUILDSYS setup ${VIXEN_BUILDDIR}_release $VIXEN_RELEASE_setupFLAGS
-    $VIXEN_BUILDSYS compile -C $VIXEN_BUILDDIR
+    $VIXEN_BUILDSYS compile -v -C $VIXEN_BUILDDIR
 }
 
 clean() {
