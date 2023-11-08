@@ -20,7 +20,7 @@ Available Tasks:
 build         Build this project executable, libs & tests.
 build_release Build a release version of executable, libs & tests
 clean         Remove files generated from build system.
-test          Run all tests."
+test          Run tests [accepts ID pattern]."
 }
 
 echo_performance() {
@@ -57,8 +57,23 @@ then
     exit 1
 fi
 
-for target in "$@"
-do
-    $target
+while [ $# -gt 0 ]; do
+    # Break on calling of special 'help' target.
+    if [[ $1 = 'help' ]]; then
+        echo_help
+        exit 1
+    fi
+
+    # If there is an argument following 'test'
+    # target, consume that argument as the test id
+    # pattern.
+    if [[ $1 = 'test' && $# -gt 1 ]]; then
+        $1 $2
+        shift
+    # Treat any other target as a no-args target.
+    else
+        $1
+    fi
+    shift
     wait
 done
