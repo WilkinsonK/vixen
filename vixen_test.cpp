@@ -44,6 +44,7 @@ int main(int argc, const char* argv[]) {
     hounddog::add_test(trs, "symbols::symbol_next_isvalidnum", test_vixen::symbols::test_symbol_next_isvalidnum);
     hounddog::add_test(trs, "symbols::parser_no_error", test_vixen::symbols::test_parser_no_error);
     hounddog::add_test(trs, "symbols::parser_no_whitespace", test_vixen::symbols::test_parser_nowhitespace);
+    hounddog::add_test(trs, "symbols::parser_no_comment", test_vixen::symbols::test_parser_nocomment);
     hounddog::add_test(trs, "symbols::parser_parse_expected", test_vixen::symbols::test_parser_parse_expected);
 
     // Vixen Token Parsing Suite.
@@ -56,6 +57,7 @@ int main(int argc, const char* argv[]) {
     // The `Token`s are used as classifiers to
     // assist in organizing our symbols at parse
     // time.
+    hounddog::add_test(trs, "tokens::mapper_find_errunk", test_vixen::tokens::test_find_errunk);
 
     // Current driver code.
     switch (argc) {

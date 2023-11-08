@@ -221,6 +221,21 @@ namespace test_vixen::symbols {
         }
     }
 
+    void test_parser_nocomment() {
+        RawParser p = setup_parser();
+
+        // Validate that comment lines are
+        // eliminated when using `advancec`.
+        // Using examples/test_symbols.vxn, on
+        // first `advancec` call, the parser
+        // position should be at line 5 column 1.
+        p.advancec();
+
+        hounddog::assert(p.column() == 1, "Column position should be at column 1 not {}.", p.column());
+        hounddog::assert(p.lineno() == 5, "Lineno position should be at lineno 6 not {}.", p.lineno());
+        hounddog::assert(p.lookahead(2) == "sx", "Next 2 characters should be 'sx' got '{}'.", p.lookahead(2));
+    }
+
     void test_parser_parse_expected() {
         RawParser p = setup_parser();
         TRIPLET(Symbol) symbols_expected[] = {
