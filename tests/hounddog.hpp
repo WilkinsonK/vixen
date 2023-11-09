@@ -191,10 +191,13 @@ namespace hounddog {
         struct winsize ws;
         ioctl(STDIN_FILENO, TIOCGWINSZ, &ws);
 
+        // Gutters.
+        const std::string gutter(std::min((int)ws.ws_col, 78), '-');
+
         os
-        << std::string(ws.ws_col, '-') << "\n"
+        << gutter << " |\n"
         << std::vformat(title, std::make_format_args(args...)) << "\n"
-        << std::string(ws.ws_col, '-')
+        << gutter << " |"
         << std::endl;
     }
 
