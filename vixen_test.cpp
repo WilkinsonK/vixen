@@ -58,6 +58,12 @@ int main(int argc, const char* argv[]) {
     // assist in organizing our symbols at parse
     // time.
     hounddog::add_test(trs, "tokens::mapper_find_errunk", test_vixen::tokens::test_find_errunk);
+    hounddog::add_test(trs, "tokens::mapper_find_genname", test_vixen::tokens::test_find_genname);
+    hounddog::add_test(trs, "tokens::mapper_find_gentype", test_vixen::tokens::test_find_gentype);
+    hounddog::add_test(trs, "tokens::mapper_find_numtype", test_vixen::tokens::test_find_numtype);
+    hounddog::add_test(trs, "tokens::lexer_parse_isfloat", test_vixen::tokens::test_isfloat);
+    hounddog::add_test(trs, "tokens::lexer_parse_isgeneric", test_vixen::tokens::test_isgeneric);
+    hounddog::add_test(trs, "tokens::lexer_parse_isinteger", test_vixen::tokens::test_isinteger);
 
     // Current driver code.
     switch (argc) {
