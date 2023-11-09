@@ -28,10 +28,8 @@ test          Run all tests.
 ### Requirements
 
 #### C++ Standard 20
-This project, was first ported from the prototype into **C++** when
-C++20 was available. Love it or hate it, the author of Vixen likes
-to make use of the latest tools when they are available. The compiler
-of choice is going to be **GCC** where available (v13.2.1).
+This project requires the **C++** 20 standard or
+higher using **GCC** (13.2.1).
 
 ```bash
 $ gcc --version
